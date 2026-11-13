@@ -1,3 +1,6 @@
+# 概要
+能力配分ができない、次の画面に引き継がれない、総合が50固定になってしまっている バグの修正
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
