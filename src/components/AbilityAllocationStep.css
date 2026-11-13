@@ -1,0 +1,202 @@
+.ability-allocation-step {
+  width: 100%;
+}
+
+.allocation-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.allocation-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.allocation-header p {
+  margin: 0;
+  color: #666;
+  font-size: 1rem;
+}
+
+.allocation-container {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.abilities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ability-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ability-item label {
+  font-weight: 500;
+  color: #555;
+  min-width: 120px;
+  text-align: right;
+  font-size: 0.95rem;
+}
+
+.ability-input-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.slider {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: #ddd;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+  border: none;
+}
+
+.value-input {
+  width: 60px;
+  padding: 6px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.value-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.remaining-points {
+  text-align: center;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 2px solid #ddd;
+  transition: all 0.3s;
+}
+
+.remaining-points p {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.remaining-points strong {
+  color: #667eea;
+  font-size: 1.3rem;
+}
+
+.remaining-points.complete {
+  background: #eff8f5;
+  border-color: #4caf50;
+}
+
+.remaining-points.complete p {
+  color: #333;
+}
+
+.remaining-points.complete strong {
+  color: #4caf50;
+}
+
+.complete-message {
+  margin-top: 8px !important;
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.buttons-group {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.reset-button,
+.complete-button {
+  padding: 10px 24px;
+  border: 2px solid #667eea;
+  background: white;
+  color: #667eea;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reset-button:hover {
+  background: #f0f4ff;
+}
+
+.complete-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: transparent;
+}
+
+.complete-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.complete-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .ability-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ability-item label {
+    min-width: auto;
+    text-align: left;
+  }
+
+  .ability-input-group {
+    width: 100%;
+  }
+
+  .buttons-group {
+    flex-direction: column;
+  }
+
+  .reset-button,
+  .complete-button {
+    width: 100%;
+  }
+}

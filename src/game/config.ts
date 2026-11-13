@@ -1,0 +1,131 @@
+import type { MangaConfigOptions, GameConfig } from '@/types';
+
+/**
+ * 漫画設定の選択肢定義
+ */
+export const MANGA_CONFIG_OPTIONS: MangaConfigOptions = {
+  genres: [
+    {
+      id: 'shounen_action',
+      label: 'バトル・冒険',
+      description: 'ド派手なアクションと熱いバトルが中心'
+    },
+    {
+      id: 'shounen_comedy',
+      label: 'ギャグ・コメディ',
+      description: 'クスクス笑える日常と突飛なネタ'
+    },
+    {
+      id: 'shounen_adventure',
+      label: 'ミステリー・冒険',
+      description: '謎解きと探索がメイン'
+    },
+    {
+      id: 'shounen_psychological',
+      label: 'サスペンス・心理戦',
+      description: '登場人物の心理や葛藤を深く描写'
+    },
+    {
+      id: 'shounen_romance',
+      label: 'ラブコメ・恋愛',
+      description: 'キャラの関係性と恋愛ドラマ'
+    }
+  ],
+  worldviews: [
+    {
+      id: 'contemporary',
+      label: '現代日本',
+      description: '今のような世界観'
+    },
+    {
+      id: 'fantasy',
+      label: 'ファンタジー',
+      description: '魔法や怪物がいる異世界'
+    },
+    {
+      id: 'scifi',
+      label: 'SF・近未来',
+      description: 'テクノロジーと未来的な舞台'
+    },
+    {
+      id: 'historical',
+      label: '歴史冒険',
+      description: '過去の時代や実在の歴史設定'
+    },
+    {
+      id: 'supernatural',
+      label: 'オカルト・超自然',
+      description: '幽霊や超能力などの怪奇現象'
+    }
+  ],
+  protagonists: [
+    {
+      id: 'ordinary_boy',
+      label: '普通の少年',
+      description: '平凡だけど夢と根性がある'
+    },
+    {
+      id: 'genius_girl',
+      label: '天才少女',
+      description: '生まれながらの才能に恵まれている'
+    },
+    {
+      id: 'antihero',
+      label: 'アンチヒーロー',
+      description: '自分勝手だけど魅力的なタイプ'
+    },
+    {
+      id: 'mysterious_entity',
+      label: '謎の存在',
+      description: '正体不明で危険な空気がある'
+    },
+    {
+      id: 'underdog',
+      label: 'アンダードッグ',
+      description: '最初は弱いが成長していく'
+    }
+  ],
+  styles: [
+    {
+      id: 'traditional_shounen',
+      label: 'オーソドックス',
+      description: '王道少年漫画の構成'
+    },
+    {
+      id: 'serious_dark',
+      label: 'シリアス・ダーク',
+      description: '重い雰囲気と深刻なテーマ'
+    },
+    {
+      id: 'comedy_slice_of_life',
+      label: '日常系・ほのぼの',
+      description: 'キャラの関係と日常を描写'
+    },
+    {
+      id: 'experimental',
+      label: '実験的・前衛',
+      description: '独創的で型破りな表現'
+    },
+    {
+      id: 'heartwarming',
+      label: 'ハートウォーミング',
+      description: '感動と涙の人間ドラマ'
+    }
+  ]
+};
+
+/**
+ * ゲーム全体の設定値
+ */
+export const GAME_CONFIG: GameConfig = {
+  saveVersion: 1,
+  
+  // 漫画能力配分の制限
+  mangaAbilityMinPerAbility: 0,
+  mangaAbilityMaxPerAbility: 100,
+  
+  // 連載シミュレーション
+  maxSerializationWeeks: 100,
+  minPopularityToSurvive: 10,
+  rivalCount: 5,
+};
