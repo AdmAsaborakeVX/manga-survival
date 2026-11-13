@@ -129,3 +129,80 @@ export const GAME_CONFIG: GameConfig = {
   minPopularityToSurvive: 10,
   rivalCount: 5,
 };
+
+// ============================================
+// Serialization Simulation Config
+// ============================================
+
+/** 人気計算の定数 */
+export const POPULARITY_CONFIG = {
+  // 範囲
+  MIN: 0,
+  MAX: 100,
+  INITIAL: 50,
+  
+  // 安定性・爆発力
+  STABILITY_MIN: 0.3,
+  STABILITY_MAX: 1.0,
+  EXPLOSIVENESS_MIN: 0.5,
+  EXPLOSIVENESS_MAX: 2.5,
+  
+  // 変動
+  BASE_CHANGE_RATE: 0.15,
+  MOMENTUM_FACTOR: 0.7,
+  STABILITY_FACTOR: 0.5,
+  SERIES_PROGRESS_MALUS: 0.98,
+};
+
+/** 打ち切り判定の定数 */
+export const CANCELLATION_CONFIG = {
+  // 連続低順位で打ち切り
+  LOW_RANKING_WEEKS_TO_CANCEL: 8,
+  LOW_RANKING_THRESHOLD: 15,
+  
+  // 平均順位での判定
+  AVERAGE_RANKING_TO_CANCEL: 18,
+  AVERAGING_WEEKS: 13,
+  
+  // 打ち切りリスクの減衰
+  RISK_DECAY_RATE: 0.85,
+  
+  // リスク増加量
+  RISK_INCREASE_PER_LOW_WEEK: 0.15,
+};
+
+/** 完結判定の定数 */
+export const COMPLETION_CONFIG = {
+  MIN_WEEKS_TO_COMPLETE: 60,
+  MIN_AVERAGE_POPULARITY: 60,
+  MIN_AVERAGE_RANKING: 10,
+  MIN_TOTAL_SALES: 1000000,
+};
+
+/** 売上計算の定数 */
+export const SALES_CONFIG = {
+  VOLUME_RELEASE_INTERVAL: 8,
+  BASE_SALES_PER_VOLUME: 50000,
+  POPULARITY_TO_SALES_FACTOR: 2000,
+  RANKING_BONUS_FACTOR: 10000,
+};
+
+/** イベント発生確率（基本値） */
+export const EVENT_CONFIG = {
+  BASE_POSITIVE_PROBABILITY: 0.12,
+  BASE_NEGATIVE_PROBABILITY: 0.10,
+  COOLDOWN_WEEKS: 2,
+  SAME_EVENT_COOLDOWN: 3,
+};
+
+/** ライバル作品生成 */
+export const RIVAL_CONFIG = {
+  COUNT: 5,
+  ABILITY_VARIANCE: 15,
+  INITIAL_POPULARITY_MIN: 35,
+  INITIAL_POPULARITY_MAX: 60,
+  STABILITY_MIN: 0.4,
+  STABILITY_MAX: 0.9,
+  EXPLOSIVENESS_MIN: 0.6,
+  EXPLOSIVENESS_MAX: 2.0,
+};

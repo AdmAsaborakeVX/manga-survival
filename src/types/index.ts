@@ -95,6 +95,85 @@ export interface GameEvent {
   popularityDelta: number;
 }
 
+/** イベント定義 */
+export interface EventDefinition {
+  id: string;
+  name: string;
+  type: 'positive' | 'negative' | 'neutral';
+  description: string;
+  baseOccurrenceProbability: number;
+  effects: {
+    popularity?: number;
+    stability?: number;
+    explosiveness?: number;
+    sales?: number;
+  };
+  cooldown?: number;
+}
+
+// ============================================
+// Serialization State Types
+// ============================================
+
+/** 連載中の単一作品の状態 */
+export interface SerializingManga {
+  id: string;
+  title: string;
+  configuration: MangaConfiguration;
+  abilities: MangaAbilities;
+  totalAbility: number;
+  
+  // 連載統計
+  currentPopularity: number;
+  popularityHistory: number[];
+  
+  // 順位
+  currentRanking: number;
+  currentPlacementRanking: number;
+  rankingHistory: number[];
+  
+  // 売上
+  totalSales: number;
+  lastSalesWeek: number;
+  salesHistory: number[];
+  
+  // 状態
+  stability: number;
+  explosiveness: number;
+  readerAffinityTrend: number;
+  editorExpectation: number;
+  
+  // イベント
+  lastEventId: string | null;
+  lastEventWeek: number;
+  eventHistory: Array<{ week: number; event: GameEvent }>;
+  
+  // 打ち切り危険度
+  cancellationRisk: number;
+  lowRankingWeeks: number;
+  
+  // 連載開始時の初期値
+  initialPopularity: number;
+}
+
+/** 連載状態全体 */
+export interface SerializationState {
+  id: string;
+  playerMangaId: string;
+  playerManga: SerializingManga;
+  rivalMangas: SerializingManga[];
+  
+  currentWeek: number;
+  isActive: boolean;
+  endReason: 'running' | 'cancelled' | 'completed' | null;
+  
+  seed: number;
+  
+  createdAt: number;
+  startedAt: number | null;
+  endedAt: number | null;
+}
+
 // ============================================
 // Game Data (Save File)
 // ============================================
