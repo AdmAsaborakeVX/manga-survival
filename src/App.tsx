@@ -1,18 +1,78 @@
-import { useState, useEffect } from 'react';
-import type { GameState, GameData } from '@/types';
-import { restoreGameSession } from '@/utils/storage';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import type { GameState, GameData, SerializationState, MangaRecord } from '@/types';
+import { restoreGameSession, loadSerializationState, saveSerializationState, deleteSerializationState } from '@/utils/storage';
+import { initializeSerializationState } from '@/game/serialization';
+import { generateRandomSeed } from '@/utils/seededRandom';
 import TitleScreen from './components/screens/TitleScreen';
 import MangaCreationScreen from './components/screens/MangaCreationScreen';
+import SerializationConfirmationScreen from './components/screens/SerializationConfirmationScreen';
+import SerializationScreen from './components/screens/SerializationScreen';
+import SerializationResultScreen from './components/screens/SerializationResultScreen';
 import './App.css';
 
 function App() {
   const [gameState, setGameState] = useState<GameState>('title');
   const [gameData, setGameData] = useState<GameData | null>(null);
+  const [selectedManga, setSelectedManga] = useState<MangaRecord | null>(null);
+  const [serializationState, setSerializationState] = useState<SerializationState | null>(null);
+
+  // 初期化をメモ化して不要な再実行を防ぐ
+  const initializationResult = useMemo(() => {
+    const data = restoreGameSession();
+    const savedSerialization = loadSerializationState();
+    return { data, savedSerialization };
+  }, []);
 
   useEffect(() => {
-    // ゲームセッションを復元
-    const data = restoreGameSession();
+    const { data, savedSerialization } = initializationResult;
     setGameData(data);
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (savedSerialization && savedSerialization.isActive) {
+      setSerializationState(savedSerialization);
+      setGameState('serialization');
+    }
+  }, [initializationResult]);
+
+  const handleMangaCreationComplete = useCallback((manga: MangaRecord) => {
+    setSelectedManga(manga);
+    setGameState('confirmation');
+  }, []);
+
+  const handleSerializationStart = useCallback(() => {
+    if (!selectedManga) return;
+
+    const newSerializationState = initializeSerializationState(
+      selectedManga,
+      generateRandomSeed()
+    );
+    newSerializationState.startedAt = Date.now();
+
+    setSerializationState(newSerializationState);
+    saveSerializationState(newSerializationState);
+    setGameState('serialization');
+  }, [selectedManga]);
+
+  const handleSerializationStateChange = useCallback((state: SerializationState) => {
+    setSerializationState(state);
+    saveSerializationState(state);
+  }, []);
+
+  const handleSerializationEnd = useCallback(() => {
+    deleteSerializationState();
+    setGameState('result');
+  }, []);
+
+  const handleBackToTitle = useCallback(() => {
+    setGameState('title');
+    setSerializationState(null);
+    setSelectedManga(null);
+    deleteSerializationState();
+  }, []);
+
+  const handleCancel = useCallback(() => {
+    setGameState('title');
+    setSelectedManga(null);
   }, []);
 
   if (!gameData) {
@@ -28,10 +88,29 @@ function App() {
         <MangaCreationScreen
           gameData={gameData}
           setGameData={setGameData}
-          onComplete={() => setGameState('confirmation')}
+          onComplete={handleMangaCreationComplete}
         />
       )}
-      {/* Other screens will be added here */}
+      {gameState === 'confirmation' && selectedManga && (
+        <SerializationConfirmationScreen
+          manga={selectedManga}
+          onConfirm={handleSerializationStart}
+          onCancel={handleCancel}
+        />
+      )}
+      {gameState === 'serialization' && serializationState && (
+        <SerializationScreen
+          serializationState={serializationState}
+          onStateChange={handleSerializationStateChange}
+          onSerializationEnd={handleSerializationEnd}
+        />
+      )}
+      {gameState === 'result' && serializationState && (
+        <SerializationResultScreen
+          serializationState={serializationState}
+          onBackToTitle={handleBackToTitle}
+        />
+      )}
     </div>
   );
 }

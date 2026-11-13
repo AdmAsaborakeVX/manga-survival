@@ -11,7 +11,7 @@ import './MangaCreationScreen.css';
 interface MangaCreationScreenProps {
   gameData: GameData;
   setGameData: (data: GameData) => void;
-  onComplete: () => void;
+  onComplete: (manga: MangaRecord) => void;
 }
 
 type CreationStep = 'config' | 'ability' | 'confirmation';
@@ -47,7 +47,9 @@ export default function MangaCreationScreen({
   };
 
   const handleConfirm = () => {
-    onComplete();
+    if (mangaRecord) {
+      onComplete(mangaRecord);
+    }
   };
 
   return (

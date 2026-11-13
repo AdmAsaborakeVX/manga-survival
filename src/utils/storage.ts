@@ -1,7 +1,8 @@
-import type { GameData } from '@/types';
+import type { GameData, SerializationState } from '@/types';
 import { GAME_CONFIG } from '@/game/config';
 
 const STORAGE_KEY = 'manga_survival_game_data';
+const SERIALIZATION_STATE_KEY = 'manga_survival_serialization_state';
 
 /**
  * ゲームデータを保存
@@ -74,4 +75,45 @@ export function clearGameData(): GameData {
 export function restoreGameSession(): GameData {
   const existing = loadGameData();
   return existing || clearGameData();
+}
+
+/**
+ * 連載状態を保存
+ */
+export function saveSerializationState(state: SerializationState): boolean {
+  try {
+    const json = JSON.stringify(state);
+    localStorage.setItem(SERIALIZATION_STATE_KEY, json);
+    return true;
+  } catch (error) {
+    console.error('Failed to save serialization state:', error);
+    return false;
+  }
+}
+
+/**
+ * 連載状態を読み込み
+ */
+export function loadSerializationState(): SerializationState | null {
+  try {
+    const json = localStorage.getItem(SERIALIZATION_STATE_KEY);
+    if (!json) return null;
+    return JSON.parse(json) as SerializationState;
+  } catch (error) {
+    console.error('Failed to load serialization state:', error);
+    return null;
+  }
+}
+
+/**
+ * 連載状態を削除
+ */
+export function deleteSerializationState(): boolean {
+  try {
+    localStorage.removeItem(SERIALIZATION_STATE_KEY);
+    return true;
+  } catch (error) {
+    console.error('Failed to delete serialization state:', error);
+    return false;
+  }
 }
