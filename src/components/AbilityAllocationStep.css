@@ -137,6 +137,12 @@
   font-weight: 600;
 }
 
+.info-message {
+  margin-top: 8px !important;
+  color: #999;
+  font-size: 0.9rem;
+}
+
 .buttons-group {
   display: flex;
   gap: 12px;

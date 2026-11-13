@@ -31,8 +31,11 @@ export default function MangaCreationScreen({
     setStep('ability');
   };
 
-  const handleAbilityComplete = (updatedManga: (typeof gameData.mangas)[0]) => {
+  const handleAbilityComplete = (updatedManga: MangaRecord) => {
     if (!updatedManga) return;
+
+    // updatedMangaを保存
+    setMangaRecord(updatedManga);
 
     const newGameData: GameData = {
       ...gameData,

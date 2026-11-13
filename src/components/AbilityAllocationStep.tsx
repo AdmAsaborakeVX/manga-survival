@@ -35,6 +35,7 @@ export default function AbilityAllocationStep({
   onComplete,
 }: AbilityAllocationStepProps) {
   const [abilities, setAbilities] = useState(initialManga.abilities);
+
   const remaining = useMemo(
     () => calculateRemainingAbilityPoints(abilities, initialManga.totalAbility),
     [abilities, initialManga.totalAbility]
@@ -61,7 +62,8 @@ export default function AbilityAllocationStep({
     onComplete(updatedManga);
   };
 
-  const isComplete = remaining === 0;
+  // 配分が完了したかどうか（残りポイント = 0）
+  const isBalanced = remaining === 0;
 
   return (
     <div className="ability-allocation-step">
@@ -102,9 +104,10 @@ export default function AbilityAllocationStep({
           ))}
         </div>
 
-        <div className={`remaining-points ${remaining === 0 ? 'complete' : ''}`}>
+        <div className={`remaining-points ${isBalanced ? 'complete' : ''}`}>
           <p>残りポイント: <strong>{remaining}</strong></p>
-          {remaining === 0 && <p className="complete-message">✓ 配分完了</p>}
+          {isBalanced && <p className="complete-message">✓ 配分完了（最適配分）</p>}
+          {!isBalanced && <p className="info-message">自由に配分できます</p>}
         </div>
 
         <div className="buttons-group">
@@ -118,7 +121,6 @@ export default function AbilityAllocationStep({
           <button
             className="complete-button"
             onClick={handleComplete}
-            disabled={!isComplete}
             type="button"
           >
             確認画面へ

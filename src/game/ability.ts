@@ -108,6 +108,9 @@ export function calculateRemainingAbilityPoints(
 
 /**
  * 能力を個別に更新（ポイント配分用）
+ * 
+ * UIでの自由な配分を許可し、確定時にのみバリデーション
+ * ユーザーが1つの値を変更する際には、最大値までの制限のみを行う
  */
 export function updateAbility(
   abilities: MangaAbilities,
@@ -123,23 +126,10 @@ export function updateAbility(
     return null;
   }
 
-  // 差分を計算
-  const oldValue = abilities[key];
-  const delta = newValue - oldValue;
-
-  // 合計がtotalAbilityを超えないか確認
-  const currentSum = Object.values(abilities).reduce((a, b) => a + b, 0);
-  if (currentSum + delta !== totalAbility) {
-    return null;
-  }
-
+  // 単純に値を更新（合計チェックは行わない）
+  // ユーザーは各能力値を自由に配分できる
   const updated = { ...abilities, [key]: newValue };
   
-  // 最終チェック
-  if (!validateAbilities(updated, totalAbility)) {
-    return null;
-  }
-
   return updated;
 }
 

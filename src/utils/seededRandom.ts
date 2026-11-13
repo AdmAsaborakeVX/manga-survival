@@ -18,7 +18,7 @@ export class SeededRandom {
     this.seed ^= this.seed << 13;
     this.seed ^= this.seed >> 17;
     this.seed ^= this.seed << 5;
-    return ((this.seed >>> 0) / 0x100000000) >>> 0;
+    return (this.seed >>> 0) / 0x100000000;
   }
 
   /**
