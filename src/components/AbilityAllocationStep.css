@@ -62,77 +62,10 @@
   gap: 30px;
 }
 
-.abilities-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.ability-item {
-  display: flex;
-  align-items: center;
+.abilities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 16px;
-}
-
-.ability-item label {
-  font-weight: 500;
-  color: #555;
-  min-width: 120px;
-  text-align: right;
-  font-size: 0.95rem;
-}
-
-.ability-input-group {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.slider {
-  flex: 1;
-  height: 6px;
-  border-radius: 3px;
-  background: #ddd;
-  outline: none;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
-}
-
-.slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
-  border: none;
-}
-
-.value-input {
-  width: 60px;
-  padding: 6px;
-  border: 2px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.95rem;
-  text-align: center;
-  transition: border-color 0.2s;
-}
-
-.value-input:focus {
-  outline: none;
-  border-color: #667eea;
 }
 
 .remaining-points {
@@ -230,23 +163,19 @@
   cursor: not-allowed;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 1024px) {
+  .abilities-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
   .creator-abilities-info {
     grid-template-columns: 1fr;
   }
 
-  .ability-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .ability-item label {
-    min-width: auto;
-    text-align: left;
-  }
-
-  .ability-input-group {
-    width: 100%;
+  .abilities-grid {
+    grid-template-columns: 1fr;
   }
 
   .buttons-group {
@@ -264,4 +193,5 @@
   opacity: 0.8;
   pointer-events: none;
 }
+
 

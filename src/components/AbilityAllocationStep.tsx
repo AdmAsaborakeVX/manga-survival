@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import type { MangaRecord, MangaAbilities } from '@/types';
 import {
   calculateRemainingAbilityPoints,
@@ -7,6 +7,7 @@ import {
 } from '@/game/ability';
 import { SeededRandom, generateRandomSeed } from '@/utils/seededRandom';
 import AbilityGachaAnimation from './AbilityGachaAnimation';
+import AbilityCard from './AbilityCard';
 import './AbilityAllocationStep.css';
 
 interface AbilityAllocationStepProps {
@@ -24,14 +25,6 @@ const ABILITY_KEYS: AbilityKey[] = [
   'composition',
 ];
 
-const ABILITY_LABELS: Record<AbilityKey, string> = {
-  story: 'ストーリー',
-  character: 'キャラクター',
-  artwork: '画力・演出',
-  originality: '独自性・テーマ',
-  composition: '構成・テンポ',
-};
-
 export default function AbilityAllocationStep({
   manga: initialManga,
   onComplete,
@@ -39,7 +32,6 @@ export default function AbilityAllocationStep({
 }: AbilityAllocationStepProps) {
   const [abilities, setAbilities] = useState(initialManga.abilities);
   const [showAnimation, setShowAnimation] = useState(true);
-  const [animationComplete, setAnimationComplete] = useState(false);
 
   const remaining = useMemo(
     () => calculateRemainingAbilityPoints(abilities, initialManga.totalAbility),
@@ -60,7 +52,6 @@ export default function AbilityAllocationStep({
   };
 
   const handleAnimationComplete = () => {
-    setAnimationComplete(true);
     setShowAnimation(false);
   };
 
@@ -107,34 +98,15 @@ export default function AbilityAllocationStep({
       </div>
 
       <div className="allocation-container">
-        <div className="abilities-list">
+        <div className="abilities-grid">
           {ABILITY_KEYS.map((key: AbilityKey) => (
-            <div key={String(key)} className="ability-item">
-              <label htmlFor={`ability-${String(key)}`}>{ABILITY_LABELS[key]}</label>
-              <div className="ability-input-group">
-                <input
-                  id={`ability-${String(key)}`}
-                  type="range"
-                  min="0"
-                  max={initialManga.totalAbility}
-                  value={abilities[key]}
-                  onChange={(e) =>
-                    handleAbilityChange(key, parseInt(e.target.value, 10))
-                  }
-                  className="slider"
-                />
-                <input
-                  type="number"
-                  value={abilities[key]}
-                  onChange={(e) =>
-                    handleAbilityChange(key, parseInt(e.target.value, 10))
-                  }
-                  min="0"
-                  max={initialManga.totalAbility}
-                  className="value-input"
-                />
-              </div>
-            </div>
+            <AbilityCard
+              key={String(key)}
+              abilityKey={key}
+              value={abilities[key]}
+              onChange={(value) => handleAbilityChange(key, value)}
+              maxValue={initialManga.totalAbility}
+            />
           ))}
         </div>
 
