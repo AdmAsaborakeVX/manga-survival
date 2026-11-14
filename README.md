@@ -1,3 +1,6 @@
+# 概要
+漫画の情報を日本語ラベルに修正
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
