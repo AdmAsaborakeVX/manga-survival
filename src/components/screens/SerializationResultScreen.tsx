@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { scrollToTop } from '@/utils/scrollToTop';
 import './SerializationResultScreen.css';
 import type { SerializationState } from '@/types';
 
@@ -10,6 +12,9 @@ export default function SerializationResultScreen({
   serializationState,
   onBackToTitle,
 }: SerializationResultScreenProps) {
+  useEffect(() => {
+    scrollToTop();
+  }, []);
   const playerManga = serializationState.playerManga;
 
   // 終了理由を判定

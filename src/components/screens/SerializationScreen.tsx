@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { scrollToTop } from '@/utils/scrollToTop';
 import './SerializationScreen.css';
 import type { SerializationState } from '@/types';
 import { advanceWeek, simulateToEnd } from '@/game/simulation';
@@ -20,6 +21,10 @@ export default function SerializationScreen({
 }: SerializationScreenProps) {
   const [state, setState] = useState<SerializationState>(serializationState);
   const [isAdvancing, setIsAdvancing] = useState(false);
+
+  useEffect(() => {
+    scrollToTop();
+  }, []);
 
   // propsが変わった時に内部stateを同期
   useEffect(() => {

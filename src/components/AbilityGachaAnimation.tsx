@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { scrollToTop } from '@/utils/scrollToTop';
 import './AbilityGachaAnimation.css';
 
 interface AbilityGachaAnimationProps {
@@ -128,6 +129,7 @@ export default function AbilityGachaAnimation({
   useEffect(() => {
     if (step === 'complete') {
       const timer = setTimeout(() => {
+        scrollToTop();
         onAnimationComplete();
       }, 1500); // 完了演出後
 

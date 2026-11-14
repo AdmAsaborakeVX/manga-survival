@@ -3,6 +3,7 @@ import type { GameState, GameData, SerializationState, MangaRecord } from '@/typ
 import { restoreGameSession, loadSerializationState, saveSerializationState, deleteSerializationState } from '@/utils/storage';
 import { initializeSerializationState } from '@/game/serialization';
 import { generateRandomSeed } from '@/utils/seededRandom';
+import { scrollToTop } from '@/utils/scrollToTop';
 import TitleScreen from './components/screens/TitleScreen';
 import MangaCreationScreen from './components/screens/MangaCreationScreen';
 import SerializationConfirmationScreen from './components/screens/SerializationConfirmationScreen';
@@ -33,6 +34,11 @@ function App() {
       setGameState('serialization');
     }
   }, [initializationResult]);
+
+  // 画面遷移時にスクロール最上部に設定
+  useEffect(() => {
+    scrollToTop();
+  }, [gameState]);
 
   const handleMangaCreationComplete = useCallback((manga: MangaRecord) => {
     setSelectedManga(manga);

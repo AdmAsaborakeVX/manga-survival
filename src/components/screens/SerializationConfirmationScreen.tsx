@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { scrollToTop } from '@/utils/scrollToTop';
 import './SerializationConfirmationScreen.css';
 import type { MangaRecord } from '@/types';
 
@@ -12,6 +14,9 @@ export default function SerializationConfirmationScreen({
   onConfirm,
   onCancel,
 }: SerializationConfirmationScreenProps) {
+  useEffect(() => {
+    scrollToTop();
+  }, []);
   const { configuration, abilities, totalAbility } = manga;
 
   return (

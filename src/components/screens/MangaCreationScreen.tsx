@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { GameData, MangaConfiguration, MangaRecord } from '@/types';
 import { MANGA_CONFIG_OPTIONS } from '@/game/config';
 import { SeededRandom, generateRandomSeed } from '@/utils/seededRandom';
 import { createManga } from '@/game/manga';
 import { saveGameData } from '@/utils/storage';
+import { scrollToTop } from '@/utils/scrollToTop';
 import MangaConfigStep from '../MangaConfigStep';
 import AbilityAllocationStep from '../AbilityAllocationStep';
 import './MangaCreationScreen.css';
@@ -23,6 +24,15 @@ export default function MangaCreationScreen({
 }: MangaCreationScreenProps) {
   const [step, setStep] = useState<CreationStep>('config');
   const [mangaRecord, setMangaRecord] = useState<MangaRecord | null>(null);
+
+  useEffect(() => {
+    scrollToTop();
+  }, []);
+
+  // step 変更時にスクロール最上部に設定
+  useEffect(() => {
+    scrollToTop();
+  }, [step]);
 
   const handleConfigComplete = (newConfig: MangaConfiguration) => {
     const rng = new SeededRandom(generateRandomSeed());

@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { scrollToTop } from '@/utils/scrollToTop';
 import './TitleScreen.css';
 
 interface TitleScreenProps {
@@ -5,6 +7,9 @@ interface TitleScreenProps {
 }
 
 export default function TitleScreen({ onStart }: TitleScreenProps) {
+  useEffect(() => {
+    scrollToTop();
+  }, []);
   return (
     <div className="title-screen">
       <div className="title-container">
