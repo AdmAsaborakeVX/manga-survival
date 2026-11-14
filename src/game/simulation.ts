@@ -54,7 +54,7 @@ export function advanceWeek(
       const definition = EVENT_DEFINITIONS.find((def) => def.id === event.id);
       if (definition) {
         // イベント効果を適用
-        applyEventEffects(manga, definition, event);
+        applyEventEffects(manga, definition);
 
         // イベント効果後の人気値をクリップ
         manga.currentPopularity = clampPopularity(manga.currentPopularity);
@@ -94,7 +94,7 @@ export function advanceWeek(
 
   // ========== 5. 売上計算 ==========
   for (const manga of allMangas) {
-    updateSales(manga, state.currentWeek, allMangas.length);
+    updateSales(manga, state.currentWeek, allMangas.length, rng);
   }
 
   // ========== 6. 打ち切り危険度更新 ==========

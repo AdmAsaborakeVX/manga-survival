@@ -248,11 +248,14 @@ describe('Serialization Simulation Engine', () => {
   });
 
   describe('Sales Calculation', () => {
-    it('should calculate sales at volume release intervals', () => {
+    it('should calculate sales every nine serialization weeks', () => {
       let state = initializeSerializationState(mockMangaRecord, 12345);
 
-      // Advance to week 8（最初の単行本発売）
       state = advanceWeeks(state, 8);
+      expect(state.playerManga.salesHistory).toHaveLength(0);
+
+      // Advance to week 9（最初の単行本発売）
+      state = advanceWeeks(state, 1);
 
       // Check if sales were recorded
       const salesRecorded = state.playerManga.salesHistory.length > 0;

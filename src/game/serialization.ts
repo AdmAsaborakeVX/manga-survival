@@ -37,6 +37,9 @@ function initializePlayerManga(
     totalSales: 0,
     lastSalesWeek: 0,
     salesHistory: [],
+    totalPrintRun: 0,
+    printRunHistory: [],
+    pendingPrintRunBonus: 0,
 
     stability: calculateStability(manga.totalAbility, rng),
     explosiveness: calculateExplosiveness(manga.totalAbility, rng),
@@ -135,6 +138,9 @@ function generateRivalManga(index: number, rng: SeededRandom): SerializingManga 
     totalSales: 0,
     lastSalesWeek: 0,
     salesHistory: [],
+    totalPrintRun: 0,
+    printRunHistory: [],
+    pendingPrintRunBonus: 0,
 
     stability:
       RIVAL_CONFIG.STABILITY_MIN +
@@ -214,6 +220,9 @@ export function cloneSerializationState(state: SerializationState): Serializatio
         ? [...state.playerManga.placementHistory]
         : undefined,
       salesHistory: [...state.playerManga.salesHistory],
+      printRunHistory: state.playerManga.printRunHistory
+        ? [...state.playerManga.printRunHistory]
+        : undefined,
       eventHistory: [...state.playerManga.eventHistory],
     },
     rivalMangas: state.rivalMangas.map((rival) => ({
@@ -223,6 +232,7 @@ export function cloneSerializationState(state: SerializationState): Serializatio
       rankingHistory: [...rival.rankingHistory],
       placementHistory: rival.placementHistory ? [...rival.placementHistory] : undefined,
       salesHistory: [...rival.salesHistory],
+      printRunHistory: rival.printRunHistory ? [...rival.printRunHistory] : undefined,
       eventHistory: [...rival.eventHistory],
     })),
   };

@@ -23,6 +23,14 @@ export default function SerializationResultScreen({
   }, []);
   const playerManga = serializationState.playerManga;
   const placementHistory = playerManga.placementHistory ?? [];
+  const printRunHistory = playerManga.printRunHistory;
+  const cumulativePrintRun =
+    printRunHistory &&
+    printRunHistory.length === playerManga.salesHistory.length &&
+    printRunHistory.every((copies) => copies !== null)
+      ? playerManga.totalPrintRun ??
+        printRunHistory.reduce<number>((total, copies) => total + (copies ?? 0), 0)
+      : null;
   const averagePlacement =
     placementHistory.length === serializationState.currentWeek
       ? calculateAveragePlacement(placementHistory)
@@ -137,6 +145,13 @@ export default function SerializationResultScreen({
             <div className="result-item">
               <span className="result-label">累計単行本売上</span>
               <span className="result-value">{playerManga.totalSales.toLocaleString()}</span>
+            </div>
+
+            <div className="result-item">
+              <span className="result-label">累計発行部数</span>
+              <span className="result-value">
+                {cumulativePrintRun === null ? '旧巻の履歴なし' : cumulativePrintRun.toLocaleString()}
+              </span>
             </div>
           </div>
 

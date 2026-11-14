@@ -291,8 +291,7 @@ export function generateWeeklyEvents(
  */
 export function applyEventEffects(
   manga: SerializingManga,
-  definition: EventDefinition,
-  event: GameEvent
+  definition: EventDefinition
 ): void {
   // 人気変動
   if (definition.effects.popularity !== undefined) {
@@ -309,8 +308,8 @@ export function applyEventEffects(
     manga.explosiveness += definition.effects.explosiveness;
   }
 
-  // 売上効果
   if (definition.effects.sales !== undefined) {
-    manga.totalSales += definition.effects.sales;
+    manga.pendingPrintRunBonus =
+      (manga.pendingPrintRunBonus ?? 0) + definition.effects.sales;
   }
 }

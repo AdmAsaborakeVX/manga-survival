@@ -109,6 +109,7 @@ export interface EventDefinition {
     popularity?: number;
     stability?: number;
     explosiveness?: number;
+    /** Temporary potential print-run increase, applied at the next volume release */
     sales?: number;
   };
   cooldown?: number;
@@ -141,6 +142,11 @@ export interface SerializingManga {
   totalSales: number;
   lastSalesWeek: number;
   salesHistory: number[];
+  /** 発行部数。移行前の巻は不明値として null で保持する */
+  totalPrintRun?: number;
+  printRunHistory?: Array<number | null>;
+  /** 次巻の発行時に適用するイベント起因の発行部数補正 */
+  pendingPrintRunBonus?: number;
   
   // 状態
   stability: number;

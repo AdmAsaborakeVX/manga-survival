@@ -103,7 +103,7 @@ export function updateCancellationRisk(manga: SerializingManga, totalMangas = 6)
   const expectationBonus = Math.max(0, manga.editorExpectation - 0.5) * 0.08;
   manga.cancellationRisk = Math.max(0, manga.cancellationRisk - expectationBonus);
 
-  const salesPerVolume = manga.totalSales / Math.max(1, Math.floor(weekNumber / 8));
+  const salesPerVolume = manga.totalSales / Math.max(1, manga.salesHistory.length);
   if (salesPerVolume > 180000) {
     manga.cancellationRisk *= 0.85;
   } else if (salesPerVolume > 120000) {

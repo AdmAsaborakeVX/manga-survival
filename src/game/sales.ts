@@ -1,101 +1,155 @@
 import type { SerializingManga } from '@/types';
 import { SALES_CONFIG } from '@/game/config';
+import { SeededRandom } from '@/utils/seededRandom';
 
 /**
  * 単行本が発売されるかどうかを判定
- * 通常は8週ごとに単行本が発売されるという想定
+ * 1週を1話として扱い、9話ごとに発売する
  */
 export function shouldReleaseVolume(manga: SerializingManga, currentWeek: number): boolean {
-  return currentWeek % SALES_CONFIG.VOLUME_RELEASE_INTERVAL === 0 && currentWeek > 0;
+  return currentWeek % SALES_CONFIG.EPISODES_PER_VOLUME === 0 && currentWeek > 0;
 }
 
 /**
- * 単行本発売時の売上を計算
- * 
- * 考慮要素：
- * - 現在の人気
- * - 人気の累積（平均人気）
- * - 順位
- * - 固定ファンの強さ（安定性で推測）
+ * 総合能力に応じた基準発行部数を線形補間する
  */
-export function calculateVolumeSales(
-  manga: SerializingManga,
-  currentWeek: number,
-  totalMangas = 6
-): number {
-  // 基本売上（定数）
-  let sales = SALES_CONFIG.BASE_SALES_PER_VOLUME;
+export function calculateBasePrintRun(totalAbility: number): number {
+  const tiers = SALES_CONFIG.PRINT_RUN_ABILITY_TIERS;
+  const first = tiers[0];
+  const last = tiers[tiers.length - 1];
 
-  // 現在の人気による加算
-  sales += manga.currentPopularity * SALES_CONFIG.POPULARITY_TO_SALES_FACTOR;
-
-  // 平均人気による加算（固定ファン度）
-  if (manga.popularityHistory.length > 0) {
-    const avgPopularity = manga.popularityHistory.reduce((a, b) => a + b, 0) / manga.popularityHistory.length;
-    sales += (avgPopularity * 0.8) * (SALES_CONFIG.POPULARITY_TO_SALES_FACTOR * 0.5);
+  if (totalAbility <= first.ability) {
+    const next = tiers[1];
+    const perAbility = (next.copies - first.copies) / (next.ability - first.ability);
+    return Math.max(1, Math.round(first.copies + (totalAbility - first.ability) * perAbility));
   }
 
-  // 順位による補正（好順位ほど売上が増える）
-  const rankingBonus = Math.max(
-    0,
-    (totalMangas + 1 - manga.currentRanking) * SALES_CONFIG.RANKING_BONUS_FACTOR
-  );
-  sales += rankingBonus;
-
-  // 安定性による加算（固定ファンの強さ）
-  sales += manga.stability * 20000;
-
-  // 連載週数による補正（長期連載は売上が伸びにくい傾向）
-  if (currentWeek > 40) {
-    const decayRate = Math.pow(0.98, currentWeek - 40);
-    sales *= decayRate;
+  if (totalAbility >= last.ability) {
+    const previous = tiers[tiers.length - 2];
+    const perAbility = (last.copies - previous.copies) / (last.ability - previous.ability);
+    return Math.round(last.copies + (totalAbility - last.ability) * perAbility);
   }
 
-  return Math.floor(sales);
-}
-
-/**
- * イベントによる売上ボーナス
- */
-export function getEventSalesBonus(manga: SerializingManga, currentWeek: number): number {
-  // 直近のイベント履歴を確認
-  let bonus = 0;
-
-  for (const { week, event } of manga.eventHistory) {
-    // イベントが発生した週から2週間は影響が残る
-    if (currentWeek - week <= 2) {
-      // ポジティブイベントなら売上ボーナス
-      if (event.type === 'positive') {
-        bonus += 30000;
-      }
+  for (let index = 1; index < tiers.length; index++) {
+    const upper = tiers[index];
+    if (totalAbility <= upper.ability) {
+      const lower = tiers[index - 1];
+      const progress = (totalAbility - lower.ability) / (upper.ability - lower.ability);
+      return Math.round(lower.copies + (upper.copies - lower.copies) * progress);
     }
   }
 
-  return bonus;
+  return last.copies;
+}
+
+function getAveragePopularity(manga: SerializingManga): number {
+  const recentPopularities = [
+    ...manga.popularityHistory.slice(-(SALES_CONFIG.EPISODES_PER_VOLUME - 1)),
+    manga.currentPopularity,
+  ];
+
+  return recentPopularities.reduce((sum, popularity) => sum + popularity, 0) /
+    recentPopularities.length;
+}
+
+function getPlacementScore(manga: SerializingManga, totalMangas: number): number {
+  if (totalMangas <= 1) {
+    return 1;
+  }
+
+  const placement = Math.min(totalMangas, Math.max(1, manga.currentPlacementRanking));
+  return (totalMangas - placement) / (totalMangas - 1);
+}
+
+/**
+ * 作品能力を主因に、掲載順位・直近人気・小さな乱数で単巻発行部数を補正する
+ */
+export function calculateVolumePrintRun(
+  manga: SerializingManga,
+  totalMangas: number,
+  rng: SeededRandom
+): number {
+  const averagePopularity = getAveragePopularity(manga);
+  const placementScore = getPlacementScore(manga, totalMangas);
+  const popularityFactor =
+    1 + (averagePopularity / 100 - 0.5) * SALES_CONFIG.POPULARITY_PRINT_RUN_FACTOR;
+  const placementFactor =
+    1 + (placementScore - 0.5) * SALES_CONFIG.PLACEMENT_PRINT_RUN_FACTOR;
+  const eventBonusRate = Math.min(
+    SALES_CONFIG.MAX_EVENT_PRINT_RUN_BONUS,
+    Math.max(0, (manga.pendingPrintRunBonus ?? 0) / SALES_CONFIG.EVENT_PRINT_RUN_BONUS_SCALE)
+  );
+  const eventFactor = 1 + eventBonusRate;
+  const randomFactor = 1 + rng.nextFloat(
+    -SALES_CONFIG.PRINT_RUN_RANDOM_VARIATION,
+    SALES_CONFIG.PRINT_RUN_RANDOM_VARIATION
+  );
+
+  return Math.max(
+    1,
+    Math.floor(
+      calculateBasePrintRun(manga.totalAbility) *
+        popularityFactor *
+        placementFactor *
+        eventFactor *
+        randomFactor
+    )
+  );
+}
+
+/**
+ * 発行部数から、人気・掲載順位に応じた実売部数を計算する
+ */
+export function calculateVolumeSales(
+  manga: SerializingManga,
+  printRun: number,
+  totalMangas = 6
+): number {
+  const averagePopularity = getAveragePopularity(manga);
+  const placementScore = getPlacementScore(manga, totalMangas);
+  const sellThroughRate = Math.min(
+    SALES_CONFIG.MAX_SELL_THROUGH_RATE,
+    Math.max(
+      SALES_CONFIG.MIN_SELL_THROUGH_RATE,
+      SALES_CONFIG.BASE_SELL_THROUGH_RATE +
+        (averagePopularity / 100) * SALES_CONFIG.POPULARITY_SELL_THROUGH_FACTOR +
+        placementScore * SALES_CONFIG.PLACEMENT_SELL_THROUGH_FACTOR
+    )
+  );
+
+  return Math.min(printRun, Math.floor(printRun * sellThroughRate));
 }
 
 /**
  * 週ごとの売上更新処理
  */
-export function updateSales(manga: SerializingManga, currentWeek: number, totalMangas = 6): void {
+export function updateSales(
+  manga: SerializingManga,
+  currentWeek: number,
+  totalMangas: number,
+  rng: SeededRandom
+): void {
   // 単行本発売時のみ計算
   if (!shouldReleaseVolume(manga, currentWeek)) {
     return;
   }
 
-  // 基本売上を計算
-  const volumeSales = calculateVolumeSales(manga, currentWeek, totalMangas);
-
-  // イベントボーナスを追加
-  const eventBonus = getEventSalesBonus(manga, currentWeek);
-
-  const totalSales = volumeSales + eventBonus;
+  const printRun = calculateVolumePrintRun(manga, totalMangas, rng);
+  const volumeSales = calculateVolumeSales(manga, printRun, totalMangas);
 
   // 累計売上に加算
-  manga.totalSales += totalSales;
+  manga.totalSales += volumeSales;
 
   // 売上履歴に記録
-  manga.salesHistory.push(totalSales);
+  manga.salesHistory.push(volumeSales);
+
+  // 旧セーブの過去巻は実際の発行部数を復元できないため、不明値として保持する
+  if (!manga.printRunHistory) {
+    manga.printRunHistory = manga.salesHistory.slice(0, -1).map(() => null);
+  }
+  manga.totalPrintRun = (manga.totalPrintRun ?? 0) + printRun;
+  manga.printRunHistory.push(printRun);
+  manga.pendingPrintRunBonus = 0;
 
   // 最後の売上週を更新
   manga.lastSalesWeek = currentWeek;

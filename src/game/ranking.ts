@@ -51,7 +51,7 @@ export function calculatePlacementRanking(
 
   // 単行本売上による補正
   // 売上が好調だと編集部の推し度が上昇
-  const salesPerVolume = manga.totalSales / Math.max(1, Math.floor(manga.popularityHistory.length / 8));
+  const salesPerVolume = manga.totalSales / Math.max(1, manga.salesHistory.length);
   if (salesPerVolume > 200000) {
     adjustedRanking -= 0.5;
   } else if (salesPerVolume > 140000) {

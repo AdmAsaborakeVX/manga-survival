@@ -182,10 +182,28 @@ export const COMPLETION_CONFIG = {
 
 /** 売上計算の定数 */
 export const SALES_CONFIG = {
-  VOLUME_RELEASE_INTERVAL: 8,
-  BASE_SALES_PER_VOLUME: 20000,
-  POPULARITY_TO_SALES_FACTOR: 800,
-  RANKING_BONUS_FACTOR: 12000,
+  EPISODE_PAGE_COUNT: 20,
+  EPISODES_PER_VOLUME: 9,
+  PRINT_RUN_ABILITY_TIERS: [
+    { ability: 100, copies: 30000 },
+    { ability: 110, copies: 50000 },
+    { ability: 120, copies: 80000 },
+    { ability: 130, copies: 200000 },
+    { ability: 140, copies: 400000 },
+    { ability: 150, copies: 700000 },
+    { ability: 160, copies: 1500000 },
+    { ability: 170, copies: 3000000 },
+  ],
+  POPULARITY_PRINT_RUN_FACTOR: 0.2,
+  PLACEMENT_PRINT_RUN_FACTOR: 0.4,
+  PRINT_RUN_RANDOM_VARIATION: 0.05,
+  EVENT_PRINT_RUN_BONUS_SCALE: 1000000,
+  MAX_EVENT_PRINT_RUN_BONUS: 0.1,
+  BASE_SELL_THROUGH_RATE: 0.55,
+  POPULARITY_SELL_THROUGH_FACTOR: 0.25,
+  PLACEMENT_SELL_THROUGH_FACTOR: 0.15,
+  MIN_SELL_THROUGH_RATE: 0.55,
+  MAX_SELL_THROUGH_RATE: 0.95,
 };
 
 /** イベント発生確率（基本値） */

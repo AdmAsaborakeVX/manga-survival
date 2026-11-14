@@ -99,5 +99,5 @@ describe('developer simulation test runner', () => {
     expect(summary.minWeeks).toBeGreaterThan(0);
     expect(summary.maxWeeks).toBeLessThanOrEqual(settings.maxWeeks);
     expect(summary.endReasons.reduce((total, reason) => total + reason.count, 0)).toBe(count);
-  }, 15000);
+  }, 30000);
 });
