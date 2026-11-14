@@ -1,3 +1,6 @@
+# 概要
+能力値決定の演出追加
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
