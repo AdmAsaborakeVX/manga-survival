@@ -57,6 +57,11 @@ export default function AbilityAllocationStep({
   };
 
   const handleComplete = () => {
+    // 残りポイントがマイナスの場合は先に進めない
+    if (remaining < 0) {
+      return;
+    }
+
     const updatedManga: MangaRecord = {
       ...initialManga,
       abilities,
@@ -67,6 +72,8 @@ export default function AbilityAllocationStep({
 
   // 配分が完了したかどうか（残りポイント = 0）
   const isBalanced = remaining === 0;
+  // ボタンが押せるかどうか（残りポイント >= 0）
+  const canProceed = remaining >= 0;
 
   return (
     <div className={`ability-allocation-step ${showAnimation ? 'animating' : ''}`}>
@@ -112,10 +119,11 @@ export default function AbilityAllocationStep({
           ))}
         </div>
 
-        <div className={`remaining-points ${isBalanced ? 'complete' : ''}`}>
+        <div className={`remaining-points ${isBalanced ? 'complete' : ''} ${!canProceed ? 'error' : ''}`}>
           <p>残りポイント: <strong>{remaining}</strong></p>
           {isBalanced && <p className="complete-message">✓ 配分完了（最適配分）</p>}
-          {!isBalanced && <p className="info-message">自由に配分できます</p>}
+          {!isBalanced && canProceed && <p className="info-message">自由に配分できます</p>}
+          {!canProceed && <p className="error-message">⚠ ポイントを使いすぎています</p>}
         </div>
 
         <div className="buttons-group">
@@ -139,6 +147,7 @@ export default function AbilityAllocationStep({
             className="complete-button"
             onClick={handleComplete}
             type="button"
+            disabled={!canProceed}
           >
             確認画面へ
           </button>

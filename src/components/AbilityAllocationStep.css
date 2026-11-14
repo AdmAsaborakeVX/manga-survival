@@ -101,9 +101,28 @@
   color: #4caf50;
 }
 
+.remaining-points.error {
+  background: #ffebee;
+  border-color: #f44336;
+}
+
+.remaining-points.error p {
+  color: #c62828;
+}
+
+.remaining-points.error strong {
+  color: #f44336;
+}
+
 .complete-message {
   margin-top: 8px !important;
   color: #4caf50;
+  font-weight: 600;
+}
+
+.error-message {
+  margin-top: 8px !important;
+  color: #f44336;
   font-weight: 600;
 }
 
