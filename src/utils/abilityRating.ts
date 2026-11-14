@@ -23,20 +23,20 @@ export function getAbilityRating(ability: number): AbilityRating {
     return { label: '逸材', rarity: 'epic' };
   }
   if (ability >= 70) {
-    return { label: '有能', rarity: 'rare' };
+    return { label: '優秀', rarity: 'rare' };
   }
-  return { label: '実力派', rarity: 'common' };
+  if (ability >= 60) {
+    return { label: '平均的', rarity: 'common' };
+  }
+  return { label: '実力不足', rarity: 'common' };
 }
 
 /**
  * 総合能力に基づいて評価ラベルとレアリティを取得
  */
 export function getTotalAbilityRating(totalAbility: number): TotalAbilityRating {
-  if (totalAbility >= 180) {
-    return { label: '伝説級', rarity: 'legend' };
-  }
   if (totalAbility >= 170) {
-    return { label: '超一流', rarity: 'supreme' };
+    return { label: '伝説級', rarity: 'legend' };
   }
   if (totalAbility >= 160) {
     return { label: 'トップクラス', rarity: 'top' };
@@ -45,13 +45,16 @@ export function getTotalAbilityRating(totalAbility: number): TotalAbilityRating 
     return { label: '卓越', rarity: 'superior' };
   }
   if (totalAbility >= 140) {
-    return { label: '高水準', rarity: 'high' };
+    return { label: '良好', rarity: 'high' };
   }
   if (totalAbility >= 130) {
-    return { label: '良好', rarity: 'good' };
+    return { label: '標準', rarity: 'good' };
   }
   if (totalAbility >= 120) {
-    return { label: '標準', rarity: 'standard' };
+    return { label: '平均的', rarity: 'standard' };
   }
-  return { label: '平凡', rarity: 'poor' };
+  if (totalAbility >= 110) {
+    return { label: 'やや低め', rarity: 'standard' };
+  }
+  return { label: '低水準', rarity: 'poor' };
 }
