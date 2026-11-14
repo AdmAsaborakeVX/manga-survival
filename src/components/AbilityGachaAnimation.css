@@ -1,0 +1,390 @@
+.ability-gacha-animation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.gacha-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.gacha-container {
+  position: relative;
+  z-index: 1001;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 40px 30px;
+  max-width: 700px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.gacha-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.gacha-header h2 {
+  margin: 0;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.gacha-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 30px 0;
+  flex-wrap: wrap;
+}
+
+.ability-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.ability-slot.active {
+  opacity: 1;
+}
+
+.slot-frame {
+  width: 120px;
+  height: 140px;
+  background: white;
+  border-radius: 12px;
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.slot-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.slot-number {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #667eea;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 2px;
+  transition: all 0.1s ease;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.slot-number.revealed {
+  animation: numberReveal 0.3s ease-out;
+}
+
+@keyframes numberReveal {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.slot-number.total-number {
+  color: #764ba2;
+  font-size: 3.2rem;
+}
+
+.slot-label {
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.ability-rating {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: ratingPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes ratingPop {
+  0% {
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.ability-rating.common {
+  background: #4ade80;
+  color: white;
+}
+
+.ability-rating.rare {
+  background: #60a5fa;
+  color: white;
+}
+
+.ability-rating.epic {
+  background: #a78bfa;
+  color: white;
+}
+
+.ability-rating.legendary {
+  background: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
+  color: white;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.5);
+}
+
+.plus-sign,
+.equals-sign {
+  color: white;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.total-slot {
+  position: relative;
+}
+
+.total-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140px;
+  height: 160px;
+  border-radius: 12px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  animation: glow 1.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.8);
+  }
+}
+
+.completion-effect {
+  position: relative;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.completion-text {
+  margin: 0;
+  color: white;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  animation: textPulse 0.6s ease-out;
+}
+
+@keyframes textPulse {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.star {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: #fbbf24;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  animation: starBurst 0.8s ease-out forwards;
+}
+
+.star-1 {
+  left: 10%;
+  animation-delay: 0.1s;
+}
+
+.star-2 {
+  right: 10%;
+  animation-delay: 0.2s;
+}
+
+.star-3 {
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  animation-delay: 0.3s;
+}
+
+@keyframes starBurst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx, 0), var(--ty, 0)) scale(0);
+  }
+}
+
+.star-1 {
+  --tx: -60px;
+  --ty: -60px;
+}
+
+.star-2 {
+  --tx: 60px;
+  --ty: -60px;
+}
+
+.star-3 {
+  --tx: 0;
+  --ty: -80px;
+}
+
+.skip-button {
+  display: block;
+  margin: 20px auto 0;
+  padding: 10px 24px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid white;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.skip-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.skip-button:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 600px) {
+  .gacha-container {
+    padding: 30px 20px;
+  }
+
+  .gacha-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .gacha-content {
+    gap: 12px;
+    margin: 20px 0;
+  }
+
+  .slot-frame {
+    width: 100px;
+    height: 120px;
+  }
+
+  .slot-number {
+    font-size: 2.5rem;
+  }
+
+  .slot-number.total-number {
+    font-size: 2.7rem;
+  }
+
+  .plus-sign,
+  .equals-sign {
+    font-size: 1.4rem;
+  }
+
+  .ability-slot {
+    gap: 8px;
+  }
+
+  .slot-label {
+    font-size: 0.75rem;
+  }
+
+  .ability-rating {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+}

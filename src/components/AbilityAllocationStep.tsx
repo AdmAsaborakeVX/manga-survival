@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { MangaRecord, MangaAbilities } from '@/types';
 import {
   calculateRemainingAbilityPoints,
@@ -6,6 +6,7 @@ import {
   initializeAbilities,
 } from '@/game/ability';
 import { SeededRandom, generateRandomSeed } from '@/utils/seededRandom';
+import AbilityGachaAnimation from './AbilityGachaAnimation';
 import './AbilityAllocationStep.css';
 
 interface AbilityAllocationStepProps {
@@ -37,6 +38,8 @@ export default function AbilityAllocationStep({
   onBack,
 }: AbilityAllocationStepProps) {
   const [abilities, setAbilities] = useState(initialManga.abilities);
+  const [showAnimation, setShowAnimation] = useState(true);
+  const [animationComplete, setAnimationComplete] = useState(false);
 
   const remaining = useMemo(
     () => calculateRemainingAbilityPoints(abilities, initialManga.totalAbility),
@@ -56,6 +59,11 @@ export default function AbilityAllocationStep({
     setAbilities(reset);
   };
 
+  const handleAnimationComplete = () => {
+    setAnimationComplete(true);
+    setShowAnimation(false);
+  };
+
   const handleComplete = () => {
     const updatedManga: MangaRecord = {
       ...initialManga,
@@ -68,7 +76,15 @@ export default function AbilityAllocationStep({
   const isBalanced = remaining === 0;
 
   return (
-    <div className="ability-allocation-step">
+    <div className={`ability-allocation-step ${showAnimation ? 'animating' : ''}`}>
+      {showAnimation && (
+        <AbilityGachaAnimation
+          mangakaAbility={initialManga.mangakaAbility}
+          editorAbility={initialManga.editorAbility}
+          totalAbility={initialManga.totalAbility}
+          onAnimationComplete={handleAnimationComplete}
+        />
+      )}
       <div className="allocation-header">
         <h2>能力を配分する</h2>
         

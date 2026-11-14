@@ -259,3 +259,9 @@
   }
 }
 
+/* Animation state */
+.ability-allocation-step.animating {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
