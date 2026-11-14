@@ -96,9 +96,12 @@ export function calculatePopularityChange(
   let progressMalus = 0;
   if (weekNumber >= 20) {
     progressMalus =
-      -(weekNumber - 20) *
-      POPULARITY_CONFIG.SERIES_PROGRESS_MALUS *
-      (1 - stability * POPULARITY_CONFIG.STABILITY_FACTOR);
+      -Math.min(
+        POPULARITY_CONFIG.MAX_SERIES_PROGRESS_MALUS,
+        (weekNumber - 20) *
+          POPULARITY_CONFIG.SERIES_PROGRESS_MALUS *
+          (1 - stability * POPULARITY_CONFIG.STABILITY_FACTOR)
+      );
   }
 
   // ========== 総合計算 ==========

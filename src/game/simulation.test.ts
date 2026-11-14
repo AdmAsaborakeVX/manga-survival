@@ -178,7 +178,7 @@ describe('Serialization Simulation Engine', () => {
 
       expect(state.isActive).toBe(false);
       expect(state.endReason).toBeTruthy();
-      expect(['cancelled', 'completed']).toContain(state.endReason);
+      expect(['cancelled', 'completed', 'limit_reached']).toContain(state.endReason);
       expect(state.currentWeek).toBeGreaterThan(0);
       expect(state.currentWeek).toBeLessThanOrEqual(GAME_CONFIG.maxSerializationWeeks);
     });

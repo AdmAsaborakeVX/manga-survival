@@ -64,6 +64,14 @@ describe('developer simulation test runner', () => {
     expect(runSimulationTrial(settings, 123).weeks).toBe(5);
   });
 
+  it('accepts the configured safety limit and rejects larger run lengths', () => {
+    const settings = createDefaultSimulationSettings(123);
+    expect(validateSimulationSettings(settings)).toBeNull();
+
+    settings.maxWeeks += 1;
+    expect(validateSimulationSettings(settings)).toContain('最大連載週数');
+  });
+
   it('rejects inconsistent fixed ability and creator totals', () => {
     const settings = createDefaultSimulationSettings();
     settings.mangakaAbility = { mode: 'fixed', value: 50 };
@@ -99,5 +107,5 @@ describe('developer simulation test runner', () => {
     expect(summary.minWeeks).toBeGreaterThan(0);
     expect(summary.maxWeeks).toBeLessThanOrEqual(settings.maxWeeks);
     expect(summary.endReasons.reduce((total, reason) => total + reason.count, 0)).toBe(count);
-  }, 30000);
+  }, 120000);
 });

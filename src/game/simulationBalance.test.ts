@@ -59,5 +59,5 @@ describe('ability-based serialization balance', () => {
     expect(summaries[2].summary.durationRates[40]).toBeGreaterThan(summaries[1].summary.durationRates[40]);
     expect(summaries[1].exact40WeekEndRate).toBeLessThan(0.1);
     expect(summaries[2].summary.standardDeviationWeeks).toBeGreaterThan(0);
-  }, 15000);
+  }, 60000);
 });

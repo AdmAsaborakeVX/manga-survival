@@ -174,8 +174,12 @@ export function validateSimulationSettings(settings: SimulationTestSettings): st
   if (!Number.isInteger(settings.rivalCount) || settings.rivalCount < 0 || settings.rivalCount > 20) {
     return 'ライバル作品数は0〜20の整数で指定してください。';
   }
-  if (!Number.isInteger(settings.maxWeeks) || settings.maxWeeks < 1 || settings.maxWeeks > 200) {
-    return '最大連載週数は1〜200の整数で指定してください。';
+  if (
+    !Number.isInteger(settings.maxWeeks) ||
+    settings.maxWeeks < 1 ||
+    settings.maxWeeks > GAME_CONFIG.maxSerializationWeeks
+  ) {
+    return `\u6700\u5927\u9023\u8f09\u9031\u6570\u306f1\u301c${GAME_CONFIG.maxSerializationWeeks}\u9031\u306e\u6574\u6570\u3067\u6307\u5b9a\u3057\u3066\u304f\u3060\u3055\u3044\u3002`;
   }
 
   for (const setting of [settings.mangakaAbility, settings.editorAbility]) {

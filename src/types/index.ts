@@ -6,7 +6,7 @@
 export type GameState = 'title' | 'creation' | 'confirmation' | 'serialization' | 'result' | 'gallery';
 
 /** 連載ステータス */
-export type SerializationStatus = 'running' | 'completed' | 'cancelled';
+export type SerializationStatus = 'running' | 'completed' | 'cancelled' | 'limit_reached';
 
 // ============================================
 // Manga & Ability Types
@@ -176,7 +176,7 @@ export interface SerializationState {
   
   currentWeek: number;
   isActive: boolean;
-  endReason: 'running' | 'cancelled' | 'completed' | null;
+  endReason: 'running' | 'cancelled' | 'completed' | 'limit_reached' | null;
   
   seed: number;
   

@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createManga } from '@/game/manga';
 import { initializeSerializationState } from '@/game/serialization';
-import { calculateBasePopularity, calculatePopularityChange } from '@/game/popularity';
+import {
+  calculateBasePopularity,
+  calculatePopularityChange,
+  simulatePopularityTrend,
+} from '@/game/popularity';
 import { SeededRandom } from '@/utils/seededRandom';
 
 function makeManga(totalAbility: number) {
@@ -55,5 +59,15 @@ describe('ability-based popularity', () => {
     );
 
     expect(new Set(changes).size).toBeGreaterThan(1);
+  });
+
+  it('prevents long-series fatigue from overwhelming high-ability popularity', () => {
+    const mediumTrend = simulatePopularityTrend(130, 300, 20261114);
+    const strongTrend = simulatePopularityTrend(160, 300, 20261114);
+    const mean = (values: number[]) =>
+      values.reduce((sum, value) => sum + value, 0) / values.length;
+
+    expect(mean(strongTrend)).toBeGreaterThan(mean(mediumTrend));
+    expect(strongTrend[strongTrend.length - 1]).toBeGreaterThan(40);
   });
 });

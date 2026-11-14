@@ -126,9 +126,9 @@ export const GAME_CONFIG: GameConfig = {
   
   // 連載シミュレーション
   // 最大連載週数、最低生存人気、ライバル作品の数などの設定
-  maxSerializationWeeks: 200,
+  maxSerializationWeeks: 500,
   minPopularityToSurvive: 10,
-  rivalCount: 5,
+  rivalCount: 20,
 };
 
 // ============================================
@@ -152,14 +152,23 @@ export const POPULARITY_CONFIG = {
   BASE_CHANGE_RATE: 0.18,
   MOMENTUM_FACTOR: 0.15,
   STABILITY_FACTOR: 0.5,
-  SERIES_PROGRESS_MALUS: 0.05,
+  // Long-series fatigue is gradual and capped so it cannot overwhelm the ability baseline.
+  SERIES_PROGRESS_MALUS: 0.01,
+  MAX_SERIES_PROGRESS_MALUS: 1.5,
 };
 
 /** 打ち切り判定の定数 */
 export const CANCELLATION_CONFIG = {
   MIN_WEEKS_TO_CANCEL: 10,
-  // 低順位の定義（順位がこれ以上 = 下位の作品）
-  LOW_RANKING_THRESHOLD: 4,
+  LOW_RANKING_RATIO: 0.5,
+  MIDDLE_SERIES_START_WEEK: 41,
+  LONG_SERIES_START_WEEK: 101,
+  MIDDLE_LOW_RANKING_STREAK: 10,
+  LONG_LOW_RANKING_STREAK: 20,
+  // Require sustained poor results before cancelling established series.
+  EARLY_SERIES_CANCELLATION_RISK_THRESHOLD: 0.4,
+  MIDDLE_SERIES_CANCELLATION_RISK_THRESHOLD: 0.65,
+  LONG_SERIES_CANCELLATION_RISK_THRESHOLD: 0.75,
   
   // 打ち切り判定用の各種閾値（新しい計算ロジックで使用）
   // これらは古い計算式では使われなくなった
@@ -174,10 +183,20 @@ export const CANCELLATION_CONFIG = {
 
 /** 完結判定の定数 */
 export const COMPLETION_CONFIG = {
-  MIN_WEEKS_TO_COMPLETE: 40,
-  MIN_AVERAGE_POPULARITY: 52,
-  MAX_AVERAGE_RANKING_RATIO: 0.4,
+  MIN_WEEKS_TO_COMPLETE: 100,
+  MIN_AVERAGE_POPULARITY: 44,
+  MIN_RECENT_POPULARITY: 40,
+  MAX_AVERAGE_RANKING_RATIO: 0.65,
+  MAX_RECENT_PLACEMENT_RATIO: 0.7,
+  MAX_AVERAGE_PLACEMENT_RATIO: 0.65,
+  MIN_AVERAGE_PRINT_RUN: 150000,
+  MIN_TOTAL_PRINT_RUN: 1000000,
   MIN_TOTAL_SALES: 600000,
+  MIN_EDITOR_EXPECTATION: 0.55,
+  MAX_COMPLETION_RISK: 0.85,
+  BASE_WEEKLY_COMPLETION_CHANCE: 0.002,
+  WEEKLY_COMPLETION_CHANCE_PER_WEEK: 0.00005,
+  MAX_WEEKLY_COMPLETION_CHANCE: 0.015,
 };
 
 /** 売上計算の定数 */

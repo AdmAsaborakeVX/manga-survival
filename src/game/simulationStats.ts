@@ -15,8 +15,10 @@ interface SimulationStats {
   // 終了理由の分布
   cancelledCount: number;
   completedCount: number;
+  limitReachedCount: number;
   cancelledPercent: number;
   completedPercent: number;
+  limitReachedPercent: number;
   
   // 連載週数の階級分布
   within8weeks: number;
@@ -87,6 +89,7 @@ export async function runMultipleSeedSimulation(
   
   const cancelledResults = results.filter((r) => r.endReason === 'cancelled');
   const completedResults = results.filter((r) => r.endReason === 'completed');
+  const limitReachedResults = results.filter((r) => r.endReason === 'limit_reached');
 
   const weeksDistribution: Record<number, number> = {};
   for (const week of weeks) {
@@ -121,8 +124,10 @@ export async function runMultipleSeedSimulation(
     
     cancelledCount: cancelledResults.length,
     completedCount: completedResults.length,
+    limitReachedCount: limitReachedResults.length,
     cancelledPercent: (cancelledResults.length / seedCount) * 100,
     completedPercent: (completedResults.length / seedCount) * 100,
+    limitReachedPercent: (limitReachedResults.length / seedCount) * 100,
     
     within8weeks: results.filter((r) => r.weeks <= 8).length,
     within20weeks: results.filter((r) => r.weeks <= 20).length,
@@ -175,6 +180,7 @@ export function formatSimulationStats(stats: SimulationStats): string {
   lines.push(`【終了理由の分布】`);
   lines.push(`  打ち切り: ${stats.cancelledCount} 件 (${stats.cancelledPercent.toFixed(1)}%)`);
   lines.push(`  円満完結: ${stats.completedCount} 件 (${stats.completedPercent.toFixed(1)}%)`);
+  lines.push(`  安全上限到達（完結ではない）: ${stats.limitReachedCount} 件 (${stats.limitReachedPercent.toFixed(1)}%)`);
   lines.push('');
 
   lines.push(`【能力値の平均（終了理由別）】`);

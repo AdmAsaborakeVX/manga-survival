@@ -50,6 +50,8 @@ export default function SerializationResultScreen({
         return '打ち切り';
       case 'completed':
         return '円満完結';
+      case 'limit_reached':
+        return '安全上限到達（完結ではありません）';
       default:
         return '連載終了';
     }

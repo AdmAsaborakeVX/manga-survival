@@ -16,6 +16,57 @@ function getAveragePopularityRecent(manga: SerializingManga, weeks: number): num
   return sum / recentWeeks.length;
 }
 
+function getAveragePlacement(manga: SerializingManga, weeks?: number): number {
+  const history =
+    manga.placementHistory && manga.placementHistory.length > 0
+      ? manga.placementHistory
+      : manga.rankingHistory;
+  const relevantHistory = weeks === undefined ? history : history.slice(-weeks);
+
+  if (relevantHistory.length === 0) {
+    return manga.currentPlacementRanking;
+  }
+
+  return relevantHistory.reduce((sum, placement) => sum + placement, 0) /
+    relevantHistory.length;
+}
+
+function getKnownPrintRuns(manga: SerializingManga): number[] {
+  return (manga.printRunHistory ?? []).filter(
+    (printRun): printRun is number => printRun !== null
+  );
+}
+
+function getTotalPrintRun(manga: SerializingManga): number {
+  const knownPrintRuns = getKnownPrintRuns(manga);
+  return manga.totalPrintRun ??
+    knownPrintRuns.reduce((sum, printRun) => sum + printRun, 0);
+}
+
+function getAveragePrintRun(manga: SerializingManga): number {
+  const knownPrintRuns = getKnownPrintRuns(manga);
+  if (knownPrintRuns.length === 0) {
+    return 0;
+  }
+
+  return knownPrintRuns.reduce((sum, printRun) => sum + printRun, 0) /
+    knownPrintRuns.length;
+}
+
+function getLowRankingThreshold(totalMangas: number): number {
+  return Math.max(2, Math.ceil(totalMangas * CANCELLATION_CONFIG.LOW_RANKING_RATIO));
+}
+
+function getRequiredLowRankingStreak(weeksRun: number): number {
+  if (weeksRun >= CANCELLATION_CONFIG.LONG_SERIES_START_WEEK) {
+    return CANCELLATION_CONFIG.LONG_LOW_RANKING_STREAK;
+  }
+  if (weeksRun >= CANCELLATION_CONFIG.MIDDLE_SERIES_START_WEEK) {
+    return CANCELLATION_CONFIG.MIDDLE_LOW_RANKING_STREAK;
+  }
+  return 3;
+}
+
 /**
  * 人気の下降トレンドを計算（-1～1）
  * 負の値：下降トレンド
@@ -86,7 +137,7 @@ export function updateCancellationRisk(manga: SerializingManga, totalMangas = 6)
   // ========== コンポーネント4: 連続低順位スコア ==========
   const consecutiveLowRankings = countConsecutiveLowRankings(
     manga,
-    CANCELLATION_CONFIG.LOW_RANKING_THRESHOLD
+    getLowRankingThreshold(totalMangas)
   );
   const lowRankingScore = Math.min(1, consecutiveLowRankings / 5);
 
@@ -129,6 +180,10 @@ export function shouldBeCancelled(manga: SerializingManga, totalMangas = 6): boo
     return false;
   }
 
+  if (weekNumber < CANCELLATION_CONFIG.MIN_WEEKS_TO_CANCEL) {
+    return false;
+  }
+
   // ========== 条件1: 即座打ち切り（極端に悪い成績が続いている） ==========
   if (weekNumber >= 2) {
     const recentPopularities = manga.popularityHistory.slice(-2);
@@ -136,33 +191,39 @@ export function shouldBeCancelled(manga: SerializingManga, totalMangas = 6): boo
     
     if (
       recentPopularities.every((pop) => pop < 8) &&
-      recentRankings.every((rank) => rank >= CANCELLATION_CONFIG.LOW_RANKING_THRESHOLD)
+      recentRankings.every((rank) => rank >= getLowRankingThreshold(totalMangas))
     ) {
       return true;
     }
   }
 
+  const requiredLowRankingStreak = getRequiredLowRankingStreak(weekNumber);
+  const lowRankingRiskThreshold =
+    weekNumber >= CANCELLATION_CONFIG.LONG_SERIES_START_WEEK
+      ? CANCELLATION_CONFIG.LONG_SERIES_CANCELLATION_RISK_THRESHOLD
+      : weekNumber >= CANCELLATION_CONFIG.MIDDLE_SERIES_START_WEEK
+        ? CANCELLATION_CONFIG.MIDDLE_SERIES_CANCELLATION_RISK_THRESHOLD
+        : CANCELLATION_CONFIG.EARLY_SERIES_CANCELLATION_RISK_THRESHOLD;
+
   if (manga.cancellationRisk > 0.85 && weekNumber >= 3) {
-    if (manga.lowRankingWeeks >= 2) {
+    if (manga.lowRankingWeeks >= requiredLowRankingStreak) {
       return true;
     }
   }
 
-  if (weekNumber < CANCELLATION_CONFIG.MIN_WEEKS_TO_CANCEL) {
-    return false;
-  }
-
-  if (manga.cancellationRisk > 0.68 && manga.lowRankingWeeks >= 2) {
-    return true;
-  }
-
-  if (manga.cancellationRisk > 0.4) {
-    if (manga.lowRankingWeeks >= 3) {
+  if (manga.cancellationRisk > lowRankingRiskThreshold) {
+    if (manga.lowRankingWeeks >= requiredLowRankingStreak) {
       return true;
     }
 
     const avgRanking = calculateAverageRanking(manga, 10);
-    if (avgRanking >= totalMangas * 0.7 && weekNumber >= 10) {
+    const bottomRankingRatio =
+      weekNumber >= CANCELLATION_CONFIG.LONG_SERIES_START_WEEK
+        ? 0.8
+        : weekNumber >= CANCELLATION_CONFIG.MIDDLE_SERIES_START_WEEK
+          ? 0.75
+          : 0.7;
+    if (avgRanking >= totalMangas * bottomRankingRatio && weekNumber >= 10) {
       return true;
     }
 
@@ -200,64 +261,101 @@ export function shouldBeCancelledWithChance(
  */
 export function shouldComplete(manga: SerializingManga, totalMangas = 6): boolean {
   const weeksRun = manga.popularityHistory.length;
+  const knownPrintRuns = getKnownPrintRuns(manga);
+  const totalPrintRun = getTotalPrintRun(manga);
 
   // 条件1: 最小連載期間を満たしている
   if (weeksRun < COMPLETION_CONFIG.MIN_WEEKS_TO_COMPLETE) {
     return false;
   }
 
-  // 条件2: 平均人気が一定以上
+  // 条件2: 直近と長期の人気を確認
   const avgPopularity = manga.popularityHistory.reduce((a, b) => a + b, 0) / manga.popularityHistory.length;
-  if (avgPopularity < COMPLETION_CONFIG.MIN_AVERAGE_POPULARITY) {
+  const recentAvgPopularity = getAveragePopularityRecent(manga, 13);
+  if (
+    avgPopularity < COMPLETION_CONFIG.MIN_AVERAGE_POPULARITY ||
+    recentAvgPopularity < COMPLETION_CONFIG.MIN_RECENT_POPULARITY
+  ) {
     return false;
   }
 
-  // 条件3: 雑誌内で上位40%程度の平均順位を保っている
+  // 条件3: 長期・直近のアンケート順位と掲載順位を確認
   const avgRanking = calculateAverageRanking(manga);
   if (avgRanking > totalMangas * COMPLETION_CONFIG.MAX_AVERAGE_RANKING_RATIO) {
     return false;
   }
-
-  // 条件4: 累計売上が一定以上
-  if (manga.totalSales < COMPLETION_CONFIG.MIN_TOTAL_SALES) {
+  if (
+    getAveragePlacement(manga) > totalMangas * COMPLETION_CONFIG.MAX_AVERAGE_PLACEMENT_RATIO ||
+    getAveragePlacement(manga, 13) > totalMangas * COMPLETION_CONFIG.MAX_RECENT_PLACEMENT_RATIO
+  ) {
     return false;
   }
 
-  return manga.editorExpectation >= 0.55;
+  // 条件4: 発行規模と実売の両方を確認
+  const averagePrintRun = knownPrintRuns.length > 0
+    ? knownPrintRuns.reduce((sum, printRun) => sum + printRun, 0) / knownPrintRuns.length
+    : 0;
+  if (
+    averagePrintRun < COMPLETION_CONFIG.MIN_AVERAGE_PRINT_RUN ||
+    totalPrintRun < COMPLETION_CONFIG.MIN_TOTAL_PRINT_RUN ||
+    manga.totalSales < COMPLETION_CONFIG.MIN_TOTAL_SALES
+  ) {
+    return false;
+  }
+
+  return (
+    manga.editorExpectation >= COMPLETION_CONFIG.MIN_EDITOR_EXPECTATION &&
+    manga.cancellationRisk <= COMPLETION_CONFIG.MAX_COMPLETION_RISK
+  );
 }
 
-function calculateCompletionChance(manga: SerializingManga, totalMangas: number): number {
+export function calculateCompletionChance(manga: SerializingManga, totalMangas: number): number {
+  const weeksRun = manga.popularityHistory.length;
   const averagePopularity =
     manga.popularityHistory.reduce((sum, value) => sum + value, 0) /
     Math.max(1, manga.popularityHistory.length);
   const averageRanking = calculateAverageRanking(manga);
-  const maxCompletionRanking = totalMangas * COMPLETION_CONFIG.MAX_AVERAGE_RANKING_RATIO;
-  const popularityScore = Math.min(1, Math.max(0,
-    (averagePopularity - COMPLETION_CONFIG.MIN_AVERAGE_POPULARITY) / 18
+  const averagePlacement = getAveragePlacement(manga);
+  const averagePrintRun = getAveragePrintRun(manga);
+  const recentPopularityScore = Math.max(0, Math.min(1,
+    (getAveragePopularityRecent(manga, 13) - 40) / 40
   ));
-  const rankingScore = Math.min(1, Math.max(0,
-    (maxCompletionRanking - averageRanking) / Math.max(1, maxCompletionRanking - 1)
+  const longTermPopularityScore = Math.max(0, Math.min(1,
+    (averagePopularity - 40) / 40
   ));
-  const salesScore = Math.min(1, Math.max(0,
-    (manga.totalSales - COMPLETION_CONFIG.MIN_TOTAL_SALES) / 1400000
+  const rankingScore = Math.max(0, Math.min(1, 1 - averageRanking / totalMangas));
+  const placementScore = Math.max(0, Math.min(1, 1 - averagePlacement / totalMangas));
+  const printRunScore = Math.max(0, Math.min(1, averagePrintRun / 1500000));
+  const cumulativePrintRunScore = Math.max(0, Math.min(1,
+    getTotalPrintRun(manga) / 10000000
   ));
-  const expectationScore = Math.min(1, Math.max(0, (manga.editorExpectation - 0.5) / 0.4));
-  const safetyScore = Math.min(1, Math.max(0, 1 - manga.cancellationRisk / 0.5));
+  const editorScore = Math.max(0, Math.min(1, manga.editorExpectation));
+  const safetyScore = Math.max(0, Math.min(1, 1 - manga.cancellationRisk));
+  const qualityScore = (
+    recentPopularityScore +
+    longTermPopularityScore +
+    rankingScore +
+    placementScore +
+    printRunScore +
+    cumulativePrintRunScore +
+    editorScore +
+    safetyScore
+  ) / 8;
+  const maturityWeeks = Math.max(0, weeksRun - COMPLETION_CONFIG.MIN_WEEKS_TO_COMPLETE);
+  const ageChance =
+    COMPLETION_CONFIG.BASE_WEEKLY_COMPLETION_CHANCE +
+    maturityWeeks * COMPLETION_CONFIG.WEEKLY_COMPLETION_CHANCE_PER_WEEK;
+  const performanceFactor = 1.25 - qualityScore * 0.5;
 
   return Math.min(
-    0.75,
-    0.05 +
-      popularityScore * 0.15 +
-      rankingScore * 0.18 +
-      salesScore * 0.12 +
-      expectationScore * 0.08 +
-      safetyScore * 0.17
+    COMPLETION_CONFIG.MAX_WEEKLY_COMPLETION_CHANCE,
+    ageChance * performanceFactor
   );
 }
 
 /**
  * 連載終了かどうかを判定
- * 戻り値: null = 継続、'cancelled' = 打ち切り、'completed' = 円満完結
+ * 戻り値: null = 継続、'cancelled' = 打ち切り、'completed' = 円満完結、'limit_reached' = 安全上限到達
  */
 export function checkEndCondition(
   manga: SerializingManga,
@@ -265,10 +363,10 @@ export function checkEndCondition(
   rng: SeededRandom,
   maxWeeks: number = GAME_CONFIG.maxSerializationWeeks,
   totalMangas = 6
-): 'cancelled' | 'completed' | null {
+): 'cancelled' | 'completed' | 'limit_reached' | null {
   // 最大連載期間に到達
   if (currentWeek >= maxWeeks) {
-    return 'completed';
+    return 'limit_reached';
   }
 
   // 打ち切り判定

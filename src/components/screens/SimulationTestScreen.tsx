@@ -29,6 +29,7 @@ const ABILITY_FIELDS: Array<{ key: AbilityKey; label: string }> = [
 const REASON_LABELS: Record<string, string> = {
   cancelled: '打ち切り',
   completed: '円満完結',
+  limit_reached: '安全上限到達',
   other: 'その他',
 };
 
@@ -250,7 +251,7 @@ function SummaryResults({ summary }: { summary: SimulationSummary }) {
           {[8, 20, 40, 60, 80, 100].map((threshold) => (
             <Stat
               key={threshold}
-              label={threshold === 8 ? '8週以内に終了' : threshold === 100 ? '100週まで継続' : `${threshold}週以上継続`}
+              label={threshold === 8 ? '8週以内に終了' : `${threshold}週以上継続`}
               value={`${formatNumber(summary.durationRates[threshold as 8 | 20 | 40 | 60 | 80 | 100])}%`}
             />
           ))}
@@ -272,7 +273,7 @@ function SummaryResults({ summary }: { summary: SimulationSummary }) {
       <section className="sim-section">
         <h2>終了理由</h2>
         <div className="sim-reason-list">
-          {['cancelled', 'completed', 'other'].map((reason) => {
+          {['cancelled', 'completed', 'limit_reached', 'other'].map((reason) => {
             const item = summary.endReasons.find((entry) => entry.reason === reason);
             const count = item?.count ?? 0;
             const percent = item?.percent ?? 0;
@@ -530,7 +531,7 @@ export default function SimulationTestScreen() {
               <input
                 type="number"
                 min="1"
-                max="200"
+                max={GAME_CONFIG.maxSerializationWeeks}
                 value={settings.maxWeeks}
                 onChange={(event) => {
                   setUseGameSettings(false);

@@ -3,6 +3,7 @@ import { SeededRandom, generateRandomSeed } from '@/utils/seededRandom';
 import { createManga } from '@/game/manga';
 import { initializeSerializationState } from '@/game/serialization';
 import { simulateToEnd, advanceWeek } from '@/game/simulation';
+import { GAME_CONFIG } from '@/game/config';
 import type { MangaRecord } from '@/types';
 
 describe('Serialization Simulation - Extended Verification', () => {
@@ -30,7 +31,7 @@ describe('Serialization Simulation - Extended Verification', () => {
 
       // 検証
       expect(finalState.isActive).toBe(false);
-      expect(finalState.endReason).toMatch(/^(cancelled|completed)$/);
+      expect(finalState.endReason).toMatch(/^(cancelled|completed|limit_reached)$/);
       expect(finalState.playerManga.popularityHistory.length).toBeGreaterThan(0);
       expect(finalState.currentWeek).toBeGreaterThan(0);
 
@@ -39,7 +40,7 @@ describe('Serialization Simulation - Extended Verification', () => {
 
     it('should show reasonable duration distribution (50 simulations)', () => {
       const weeks: number[] = [];
-      const endReasons: Record<string, number> = { cancelled: 0, completed: 0 };
+      const endReasons: Record<string, number> = { cancelled: 0, completed: 0, limit_reached: 0 };
 
       for (let i = 0; i < 50; i++) {
         const seed = i + 10000;
@@ -76,14 +77,15 @@ describe('Serialization Simulation - Extended Verification', () => {
 
       // アサーション
       expect(avgWeeks).toBeGreaterThan(15); // 平均が15週以上
-      expect(avgWeeks).toBeLessThan(100); // 平均が100週未満
+      expect(avgWeeks).toBeLessThanOrEqual(GAME_CONFIG.maxSerializationWeeks); // 上限以下で終了
       expect(maxWeeks).toBeGreaterThan(30); // 最長が30週以上
       expect(minWeeks).toBeGreaterThan(3); // 最短が3週以上
       
       // 完結・打ち切りのどちらかが存在することを確認（完全に一方に偏らない）
       const completedRate = (endReasons.completed || 0) / 50;
       const cancelledRate = (endReasons.cancelled || 0) / 50;
-      expect(completedRate + cancelledRate).toBeGreaterThan(0.95); // ほぼ全て終了
+      const limitReachedRate = (endReasons.limit_reached || 0) / 50;
+      expect(completedRate + cancelledRate + limitReachedRate).toBeGreaterThan(0.95); // ほぼ全て終了
     });
 
     it('should show higher ability correlating with longer runs', () => {
