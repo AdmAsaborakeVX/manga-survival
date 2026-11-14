@@ -160,7 +160,7 @@ export default function AbilityGachaAnimation({
               </div>
             </div>
             <div className="slot-label">漫画家能力</div>
-            {typeof displayMangaka === 'number' && (
+            {step !== 'start' && step !== 'mangaka' && (
               <div className={`ability-rating ${mangakaRating.rarity}`}>
                 {mangakaRating.label}
               </div>
@@ -177,7 +177,7 @@ export default function AbilityGachaAnimation({
               </div>
             </div>
             <div className="slot-label">担当編集能力</div>
-            {typeof displayEditor === 'number' && (
+            {step !== 'start' && step !== 'mangaka' && step !== 'editor' && (
               <div className={`ability-rating ${editorRating.rarity}`}>
                 {editorRating.label}
               </div>
@@ -194,10 +194,10 @@ export default function AbilityGachaAnimation({
               </div>
             </div>
             <div className="slot-label">総合能力</div>
-            {typeof displayTotal === 'number' && (
+            {step === 'complete' && (
               <>
-                <div className={`ability-rating total-rating ${getTotalAbilityRating(displayTotal as number).rarity}`}>
-                  {getTotalAbilityRating(displayTotal as number).label}
+                <div className={`ability-rating total-rating ${getTotalAbilityRating(totalAbility).rarity}`}>
+                  {getTotalAbilityRating(totalAbility).label}
                 </div>
                 <div className="total-glow" />
               </>
