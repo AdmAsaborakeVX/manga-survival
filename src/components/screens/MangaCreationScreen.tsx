@@ -114,6 +114,24 @@ function ConfirmationStep({
           </div>
         </div>
 
+        <div className="creator-abilities">
+          <h3>創作者能力</h3>
+          <div className="creator-ability-items">
+            <div className="creator-ability-item">
+              <span className="label">漫画家能力</span>
+              <span className="value">{manga.mangakaAbility}</span>
+            </div>
+            <div className="creator-ability-item">
+              <span className="label">担当編集能力</span>
+              <span className="value">{manga.editorAbility}</span>
+            </div>
+            <div className="creator-ability-item total">
+              <span className="label">総合能力</span>
+              <span className="value">{manga.totalAbility}</span>
+            </div>
+          </div>
+        </div>
+
         <div className="abilities-summary">
           <h3>能力配分</h3>
           <div className="ability-bars">
@@ -123,7 +141,6 @@ function ConfirmationStep({
             <AbilityBar label="独自性・テーマ" value={manga.abilities.originality} />
             <AbilityBar label="構成・テンポ" value={manga.abilities.composition} />
           </div>
-          <p className="total">総合能力: {manga.totalAbility}</p>
         </div>
       </div>
 

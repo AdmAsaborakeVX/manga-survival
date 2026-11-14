@@ -41,7 +41,9 @@ export interface MangaAbilities {
 export interface MangaRecord {
   id: string;
   configuration: MangaConfiguration;
-  totalAbility: number;    // 漫画家能力 + 編集者能力
+  mangakaAbility: number;  // 漫画家能力（50～100）
+  editorAbility: number;   // 担当編集能力（50～100）
+  totalAbility: number;    // 漫画家能力 + 担当編集能力
   abilities: MangaAbilities;
   createdAt: number;
 }

@@ -9,12 +9,14 @@ export function createManga(
   configuration: MangaConfiguration,
   rng: SeededRandom
 ): MangaRecord {
-  const totalAbility = generateTotalAbility(rng);
+  const { mangakaAbility, editorAbility, totalAbility } = generateTotalAbility(rng);
   const abilities = initializeAbilities(totalAbility, rng);
 
   return {
     id: generateMangaId(),
     configuration,
+    mangakaAbility,
+    editorAbility,
     totalAbility,
     abilities,
     createdAt: Date.now(),
@@ -44,3 +46,4 @@ export function getAbilityBonus(_config: MangaConfiguration): Partial<MangaAbili
   // 例：ジャンルが「バトル・冒険」なら"artwork"に+5ボーナス
   return {};
 }
+

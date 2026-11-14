@@ -3,15 +3,60 @@ import { SeededRandom, generateRandomSeed } from '@/utils/seededRandom';
 import { GAME_CONFIG } from '@/game/config';
 
 /**
- * 漫画家能力と編集者能力の和から総合能力を生成
- * MVP：両者の能力を区別せず、合計値をプレイヤーが配分可能なポイントとする
+ * Box-Muller変換を使用して、正規分布に従う乱数を生成
+ * 平均0・標準偏差1の正規分布
  */
-export function generateTotalAbility(rng: SeededRandom): number {
-  // 漫画家能力: 30〜80
-  const mangakaAbility = rng.nextInt(30, 81);
-  // 編集者能力: 20〜60
-  const editorAbility = rng.nextInt(20, 61);
-  return mangakaAbility + editorAbility;
+function boxMullerNormal(rng: SeededRandom): number {
+  const u1 = rng.next();
+  const u2 = rng.next();
+  return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+}
+
+/**
+ * 平均と標準偏差を指定して、正規分布に従う乱数を生成
+ * 最小値・最大値の範囲外の値は再抽選
+ */
+function generateNormalRandom(
+  rng: SeededRandom,
+  mean: number,
+  stdDev: number,
+  min: number,
+  max: number
+): number {
+  let value = mean + boxMullerNormal(rng) * stdDev;
+  
+  // min未満またはmax超の値は再抽選（最大10回まで試行）
+  for (let i = 0; i < 10 && (value < min || value > max); i++) {
+    value = mean + boxMullerNormal(rng) * stdDev;
+  }
+  
+  // それでも範囲外の場合はクリップ
+  return Math.max(min, Math.min(max, Math.round(value)));
+}
+
+/**
+ * 漫画家能力を生成（50～100、平均65・標準偏差10の正規分布）
+ */
+export function generateMangakaAbility(rng: SeededRandom): number {
+  return generateNormalRandom(rng, 65, 10, 50, 100);
+}
+
+/**
+ * 担当編集能力を生成（50～100、平均65・標準偏差10の正規分布）
+ */
+export function generateEditorAbility(rng: SeededRandom): number {
+  return generateNormalRandom(rng, 65, 10, 50, 100);
+}
+
+/**
+ * 総合能力を生成（漫画家能力 + 担当編集能力）
+ */
+export function generateTotalAbility(rng: SeededRandom): { mangakaAbility: number; editorAbility: number; totalAbility: number } {
+  const mangakaAbility = generateMangakaAbility(rng);
+  const editorAbility = generateEditorAbility(rng);
+  const totalAbility = mangakaAbility + editorAbility;
+  
+  return { mangakaAbility, editorAbility, totalAbility };
 }
 
 /**
