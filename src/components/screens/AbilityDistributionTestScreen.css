@@ -113,6 +113,10 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.total-stats-card {
+  border-left-color: #764ba2;
+}
+
 .stats-card h3 {
   color: #333;
   margin-bottom: 15px;

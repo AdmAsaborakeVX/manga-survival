@@ -8,12 +8,28 @@ interface DistributionStats {
   min: number;
   max: number;
   median: number;
+  count50: number;
+  count60: number;
+  count70: number;
   count80: number;
   count90: number;
   count100: number;
+  percent50: number;
+  percent60: number;
+  percent70: number;
   percent80: number;
   percent90: number;
   percent100: number;
+}
+
+interface TotalDistributionStats extends DistributionStats {
+  rangeStats: Array<{
+    range: string;
+    min: number;
+    max: number;
+    count: number;
+    percent: number;
+  }>;
 }
 
 interface HistogramData {
@@ -24,7 +40,7 @@ export default function AbilityDistributionTestScreen() {
   const [trialCount, setTrialCount] = useState<100 | 1000 | 10000>(1000);
   const [mangakaStats, setMangakaStats] = useState<DistributionStats | null>(null);
   const [editorStats, setEditorStats] = useState<DistributionStats | null>(null);
-  const [totalStats, setTotalStats] = useState<DistributionStats | null>(null);
+  const [totalStats, setTotalStats] = useState<TotalDistributionStats | null>(null);
   const [mangakaHistogram, setMangakaHistogram] = useState<HistogramData>({});
   const [editorHistogram, setEditorHistogram] = useState<HistogramData>({});
   const [totalHistogram, setTotalHistogram] = useState<HistogramData>({});
@@ -36,6 +52,9 @@ export default function AbilityDistributionTestScreen() {
     const median = sorted[Math.floor(sorted.length / 2)];
     const min = sorted[0];
     const max = sorted[sorted.length - 1];
+    const count50 = values.filter((v) => v >= 50).length;
+    const count60 = values.filter((v) => v >= 60).length;
+    const count70 = values.filter((v) => v >= 70).length;
     const count80 = values.filter((v) => v >= 80).length;
     const count90 = values.filter((v) => v >= 90).length;
     const count100 = values.filter((v) => v === 100).length;
@@ -45,12 +64,51 @@ export default function AbilityDistributionTestScreen() {
       min,
       max,
       median,
+      count50,
+      count60,
+      count70,
       count80,
       count90,
       count100,
+      percent50: Math.round((count50 / values.length) * 10000) / 100,
+      percent60: Math.round((count60 / values.length) * 10000) / 100,
+      percent70: Math.round((count70 / values.length) * 10000) / 100,
       percent80: Math.round((count80 / values.length) * 10000) / 100,
       percent90: Math.round((count90 / values.length) * 10000) / 100,
       percent100: Math.round((count100 / values.length) * 10000) / 100,
+    };
+  };
+
+  const calculateTotalStats = (values: number[]): TotalDistributionStats => {
+    const baseStats = calculateStats(values);
+    
+    const rangeStats = [];
+    for (let start = 100; start < 200; start += 10) {
+      const end = start + 10;
+      const count = values.filter((v) => v >= start && v < end).length;
+      const percent = Math.round((count / values.length) * 10000) / 100;
+      rangeStats.push({
+        range: `${start}～${end - 1}`,
+        min: start,
+        max: end - 1,
+        count,
+        percent,
+      });
+    }
+    // 200ちょうどの場合
+    const count200 = values.filter((v) => v === 200).length;
+    const percent200 = Math.round((count200 / values.length) * 10000) / 100;
+    rangeStats.push({
+      range: '200',
+      min: 200,
+      max: 200,
+      count: count200,
+      percent: percent200,
+    });
+
+    return {
+      ...baseStats,
+      rangeStats,
     };
   };
 
@@ -85,7 +143,7 @@ export default function AbilityDistributionTestScreen() {
 
       setMangakaStats(calculateStats(mangakaValues));
       setEditorStats(calculateStats(editorValues));
-      setTotalStats(calculateStats(totalValues));
+      setTotalStats(calculateTotalStats(totalValues));
       setMangakaHistogram(buildHistogram(mangakaValues));
       setEditorHistogram(buildHistogram(editorValues));
       setTotalHistogram(buildHistogram(totalValues));
@@ -160,6 +218,24 @@ export default function AbilityDistributionTestScreen() {
         </div>
         <div className="stats-distribution">
           <div className="dist-item">
+            <span>50以上</span>
+            <span className="dist-value">
+              {stats.count50} / {trialCount} ({stats.percent50}%)
+            </span>
+          </div>
+          <div className="dist-item">
+            <span>60以上</span>
+            <span className="dist-value">
+              {stats.count60} / {trialCount} ({stats.percent60}%)
+            </span>
+          </div>
+          <div className="dist-item">
+            <span>70以上</span>
+            <span className="dist-value">
+              {stats.count70} / {trialCount} ({stats.percent70}%)
+            </span>
+          </div>
+          <div className="dist-item">
             <span>80以上</span>
             <span className="dist-value">
               {stats.count80} / {trialCount} ({stats.percent80}%)
@@ -177,6 +253,48 @@ export default function AbilityDistributionTestScreen() {
               {stats.count100} / {trialCount} ({stats.percent100}%)
             </span>
           </div>
+        </div>
+      </div>
+    );
+  };
+
+  const TotalStatsDisplay = ({
+    stats,
+  }: {
+    stats: TotalDistributionStats | null;
+  }) => {
+    if (!stats) return null;
+
+    return (
+      <div className="stats-card total-stats-card">
+        <h3>総合能力</h3>
+        <div className="stats-grid">
+          <div className="stat-item">
+            <span className="stat-label">平均</span>
+            <span className="stat-value">{stats.mean}</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">中央値</span>
+            <span className="stat-value">{stats.median}</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">最小</span>
+            <span className="stat-value">{stats.min}</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">最大</span>
+            <span className="stat-value">{stats.max}</span>
+          </div>
+        </div>
+        <div className="stats-distribution">
+          {stats.rangeStats.map((range) => (
+            <div key={range.range} className="dist-item">
+              <span>{range.range}</span>
+              <span className="dist-value">
+                {range.count} / {trialCount} ({range.percent}%)
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -216,7 +334,7 @@ export default function AbilityDistributionTestScreen() {
             <div className="stats-section">
               <StatsDisplay stats={mangakaStats} title="漫画家能力" />
               <StatsDisplay stats={editorStats} title="担当編集能力" />
-              <StatsDisplay stats={totalStats} title="総合能力" />
+              <TotalStatsDisplay stats={totalStats} />
             </div>
 
             <div className="histogram-section">

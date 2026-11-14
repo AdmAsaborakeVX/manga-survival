@@ -22,7 +22,10 @@ function getAbilityRating(ability: number): {
   if (ability >= 70) {
     return { label: '有能', rarity: 'rare' };
   }
-  return { label: '実力派', rarity: 'common' };
+  if (ability >= 60) {
+    return { label: '平均的', rarity: 'common' };
+  }
+  return { label: '実力不足', rarity: 'common' };
 }
 
 function generateAnimationSequence(max: number, count: number): number[] {
