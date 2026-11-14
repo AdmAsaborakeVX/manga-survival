@@ -14,6 +14,7 @@ import { SeededRandom } from '@/utils/seededRandom';
 
 export type AbilityKey = keyof MangaAbilities;
 export type ConfigurableValue = { mode: 'random' } | { mode: 'fixed'; value: number };
+type FixedConfigurableValue = Extract<ConfigurableValue, { mode: 'fixed' }>;
 
 export interface SimulationTestSettings {
   seed: number;
@@ -26,6 +27,10 @@ export interface SimulationTestSettings {
 }
 
 export interface SimulationTrial {
+  mangakaAbility: number;
+  editorAbility: number;
+  totalAbility: number;
+  abilities: MangaAbilities;
   weeks: number;
   endReason: string;
   peakPopularity: number;
@@ -59,10 +64,15 @@ export interface SimulationSummary {
   maxWeeks: number;
   standardDeviationWeeks: number;
   durationDistribution: Array<{ start: number; end: number; count: number }>;
-  durationRates: Record<8 | 20 | 40 | 60 | 80 | 100, number>;
+  durationRates: Record<8 | 'cancelled10To20' | 20 | 40 | 60 | 80 | 100, number>;
   endReasons: Array<{ reason: string; count: number; percent: number; averageWeeks: number }>;
+  averageMangakaAbility: number;
+  averageEditorAbility: number;
+  averageTotalAbility: number;
+  averageAbilities: MangaAbilities;
   averagePeakPopularity: number;
   medianPeakPopularity: number;
+  maxPeakPopularity: number;
   averageFinalPopularity: number;
   medianFinalPopularity: number;
   averageRanking: number;
@@ -108,6 +118,44 @@ export function createDefaultSimulationSettings(seed = 12345): SimulationTestSet
       artwork: randomValue(),
       originality: randomValue(),
       composition: randomValue(),
+    },
+  };
+}
+
+function balanceAbilities(total: number): MangaAbilities {
+  const base = Math.floor(total / 5);
+  const remainder = total % 5;
+  return {
+    story: base + (remainder > 0 ? 1 : 0),
+    character: base + (remainder > 1 ? 1 : 0),
+    artwork: base + (remainder > 2 ? 1 : 0),
+    originality: base + (remainder > 3 ? 1 : 0),
+    composition: base,
+  };
+}
+
+export function createBalancedAbilitySettings(
+  total: number
+): {
+  mangakaAbility: FixedConfigurableValue;
+  editorAbility: FixedConfigurableValue;
+  abilities: Record<AbilityKey, FixedConfigurableValue>;
+} {
+  if (!Number.isInteger(total) || total < 100 || total > 200) {
+    throw new RangeError('総合能力は100〜200の整数で指定してください。');
+  }
+
+  const half = Math.floor(total / 2);
+  const abilities = balanceAbilities(total);
+  return {
+    mangakaAbility: { mode: 'fixed', value: half },
+    editorAbility: { mode: 'fixed', value: total - half },
+    abilities: {
+      story: { mode: 'fixed', value: abilities.story },
+      character: { mode: 'fixed', value: abilities.character },
+      artwork: { mode: 'fixed', value: abilities.artwork },
+      originality: { mode: 'fixed', value: abilities.originality },
+      composition: { mode: 'fixed', value: abilities.composition },
     },
   };
 }
@@ -254,6 +302,10 @@ export function runSimulationTrial(
   const player = state.playerManga;
   const popularity = [...player.popularityHistory];
   return {
+    mangakaAbility: manga.mangakaAbility,
+    editorAbility: manga.editorAbility,
+    totalAbility: manga.totalAbility,
+    abilities: { ...manga.abilities },
     weeks: state.currentWeek,
     endReason: state.endReason ?? 'other',
     peakPopularity: Math.max(player.currentPopularity, ...popularity),
@@ -287,7 +339,11 @@ export function summarizeSimulationTrials(trials: SimulationTrial[]): Simulation
       count: trials.filter((trial) => trial.weeks >= start && trial.weeks <= end).length,
     };
   });
-  const durationRates = { 8: 0, 20: 0, 40: 0, 60: 0, 80: 0, 100: 0 };
+  const durationRates = { 8: 0, cancelled10To20: 0, 20: 0, 40: 0, 60: 0, 80: 0, 100: 0 };
+  durationRates.cancelled10To20 =
+    (trials.filter((trial) =>
+      trial.endReason === 'cancelled' && trial.weeks >= 10 && trial.weeks <= 20
+    ).length / trials.length) * 100;
   for (const threshold of [8, 20, 40, 60, 80, 100] as const) {
     const matchingTrials = threshold === 8
       ? trials.filter((trial) => trial.weeks <= threshold)
@@ -351,8 +407,19 @@ export function summarizeSimulationTrials(trials: SimulationTrial[]): Simulation
     durationDistribution,
     durationRates,
     endReasons,
+    averageMangakaAbility: average(trials.map((trial) => trial.mangakaAbility)),
+    averageEditorAbility: average(trials.map((trial) => trial.editorAbility)),
+    averageTotalAbility: average(trials.map((trial) => trial.totalAbility)),
+    averageAbilities: {
+      story: average(trials.map((trial) => trial.abilities.story)),
+      character: average(trials.map((trial) => trial.abilities.character)),
+      artwork: average(trials.map((trial) => trial.abilities.artwork)),
+      originality: average(trials.map((trial) => trial.abilities.originality)),
+      composition: average(trials.map((trial) => trial.abilities.composition)),
+    },
     averagePeakPopularity: average(trials.map((trial) => trial.peakPopularity)),
     medianPeakPopularity: median(trials.map((trial) => trial.peakPopularity)),
+    maxPeakPopularity: Math.max(...trials.map((trial) => trial.peakPopularity)),
     averageFinalPopularity: average(trials.map((trial) => trial.finalPopularity)),
     medianFinalPopularity: median(trials.map((trial) => trial.finalPopularity)),
     averageRanking: average(trials.map((trial) => trial.averageRanking)),
@@ -375,17 +442,6 @@ export function createComparisonProfiles(): Array<{
   editor: number;
   abilities: MangaAbilities;
 }> {
-  const balance = (total: number): MangaAbilities => {
-    const base = Math.floor(total / 5);
-    const remainder = total % 5;
-    return {
-      story: base + (remainder > 0 ? 1 : 0),
-      character: base + (remainder > 1 ? 1 : 0),
-      artwork: base + (remainder > 2 ? 1 : 0),
-      originality: base + (remainder > 3 ? 1 : 0),
-      composition: base,
-    };
-  };
   const specialty = (key: AbilityKey): MangaAbilities => ({
     story: key === 'story' ? 50 : 20,
     character: key === 'character' ? 50 : 20,
@@ -395,9 +451,9 @@ export function createComparisonProfiles(): Array<{
   });
 
   return [
-    { id: 'total-100', label: '総合100・バランス', mangaka: 50, editor: 50, abilities: balance(100) },
-    { id: 'total-130', label: '総合130・バランス', mangaka: 65, editor: 65, abilities: balance(130) },
-    { id: 'total-160', label: '総合160・バランス', mangaka: 80, editor: 80, abilities: balance(160) },
+    { id: 'total-100', label: '総合100・バランス', mangaka: 50, editor: 50, abilities: balanceAbilities(100) },
+    { id: 'total-130', label: '総合130・バランス', mangaka: 65, editor: 65, abilities: balanceAbilities(130) },
+    { id: 'total-160', label: '総合160・バランス', mangaka: 80, editor: 80, abilities: balanceAbilities(160) },
     ...ABILITY_KEYS.map((key) => ({
       id: `special-${key}`,
       label: `${({ story: 'ストーリー', character: 'キャラクター', artwork: '作画', originality: '独自性', composition: '構成' })[key]}特化`,

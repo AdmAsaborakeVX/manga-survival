@@ -7,11 +7,8 @@ import { POPULARITY_CONFIG } from '@/game/config';
  * 範囲: 0～100
  */
 export function calculateBasePopularity(totalAbility: number): number {
-  // totalAbility は通常 50～140 程度
-  // 50が基準で、最大140なら高い人気
-  // 線形変換: 50 -> 40, 140 -> 85
-  const normalized = (totalAbility - 50) / 90;
-  return Math.max(20, Math.min(85, 50 + normalized * 35));
+  // Ability 100/130/160 maps to a competitive but non-saturated 40/49/58 range.
+  return Math.max(15, Math.min(75, 25 + (totalAbility - 50) * 0.3));
 }
 
 /**
@@ -44,9 +41,9 @@ export function calculateExplosiveness(totalAbility: number, rng: SeededRandom):
  * 毎週の人気変動を計算
  *
  * 計算式の考え方：
- * - 前週の人気を強く継続（70%）し、微小な変動を加える
- * - 基線（能力に基づいた基本人気）への緩い復帰（15%）
- * - ランダムイベント的な変動（10%）
+ * - 前週の人気を土台にしながら、能力に応じた基線へ毎週戻す
+ * - 能力差が長期平均人気と回復力を決める
+ * - 乱数とイベントによる短期的な逆転を許容する
  * - 人気が高い作品は高い水準を維持しやすい
  * - 人気が低い作品は低迷しやすい（ただし完全ではない）
  */
@@ -70,27 +67,27 @@ export function calculatePopularityChange(
     ? manga.popularityHistory[manga.popularityHistory.length - 1] 
     : baselinePopularity;
   
-  const momentumTerm = (previousPopularity - currentPopularity) * 0.7;
+  const momentumTerm = (previousPopularity - currentPopularity) * POPULARITY_CONFIG.MOMENTUM_FACTOR;
 
   // ========== 基線への緩い復帰 ==========
   // 能力値に基づいた期待値へ向かう傾向（ゆっくり）
   const popDifference = baselinePopularity - currentPopularity;
-  const regressionTerm = popDifference * 0.15;
+  const regressionTerm = popDifference * POPULARITY_CONFIG.BASE_CHANGE_RATE;
 
   // ========== ランダム変動（イベント的）==========
   // 爆発力と安定性で幅を決める
   const randomBase = rng.nextFloat(-1, 1);
   
   // ランダム項は爆発力で決まり、安定性で抑制される
-  const maxRandomChange = explosiveness * 2.0;
-  const randomTerm = randomBase * maxRandomChange * (1 - stability * 0.7);
+  const maxRandomChange = explosiveness * 1.5;
+  const randomTerm = randomBase * maxRandomChange * (1 - stability * POPULARITY_CONFIG.STABILITY_FACTOR);
 
   // ========== ライバルからの競争圧力 ==========
   // ライバルが強いと相対順位が下がる傾向（弱い効果）
   let competitionPressure = 0;
   if (rivalPopularities.length > 0) {
     const avgRivalPopularity = rivalPopularities.reduce((a, b) => a + b, 0) / rivalPopularities.length;
-    competitionPressure = (avgRivalPopularity - currentPopularity) * 0.01;
+    competitionPressure = (avgRivalPopularity - currentPopularity) * 0.04;
   }
 
   // ========== 連載継続による長期減衰 ==========
@@ -98,11 +95,14 @@ export function calculatePopularityChange(
   const weekNumber = manga.popularityHistory.length;
   let progressMalus = 0;
   if (weekNumber >= 20) {
-    progressMalus = Math.pow(0.995, weekNumber - 20) - 1;
+    progressMalus =
+      -(weekNumber - 20) *
+      POPULARITY_CONFIG.SERIES_PROGRESS_MALUS *
+      (1 - stability * POPULARITY_CONFIG.STABILITY_FACTOR);
   }
 
   // ========== 総合計算 ==========
-  let totalChange = momentumTerm + regressionTerm + randomTerm + competitionPressure + progressMalus;
+  const totalChange = momentumTerm + regressionTerm + randomTerm + competitionPressure + progressMalus;
 
   // NaN チェック（デバッグ用）
   if (!Number.isFinite(totalChange)) {
@@ -163,7 +163,6 @@ export function simulatePopularityTrend(
   weeks: number,
   seed: number
 ): number[] {
-  const { SeededRandom } = require('@/utils/seededRandom');
   const rng = new SeededRandom(seed);
   const mangaState: SerializingManga = {
     id: 'test',

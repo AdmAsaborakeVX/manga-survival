@@ -3,6 +3,7 @@ import { SeededRandom } from '@/utils/seededRandom';
 import { RIVAL_CONFIG } from '@/game/config';
 import {
   calculateBasePopularity,
+  clampPopularity,
   calculateStability,
   calculateExplosiveness,
 } from '@/game/popularity';
@@ -14,7 +15,9 @@ function initializePlayerManga(
   manga: MangaRecord,
   rng: SeededRandom
 ): SerializingManga {
-  const basePopularity = calculateBasePopularity(manga.totalAbility);
+  const basePopularity = clampPopularity(
+    calculateBasePopularity(manga.totalAbility) + rng.nextFloat(-6, 6)
+  );
 
   return {
     id: manga.id,
@@ -54,13 +57,16 @@ function initializePlayerManga(
  * ライバル作品を1体生成
  */
 function generateRivalManga(index: number, rng: SeededRandom): SerializingManga {
-  // ライバルの能力値を決定（プレイヤーより若干低めだが、バラつきを持たせる）
-  const rivalAbility = 80 + rng.nextInt(-RIVAL_CONFIG.ABILITY_VARIANCE, RIVAL_CONFIG.ABILITY_VARIANCE);
+  // プレイヤーの比較基準となる能力帯を中心に、ライバルごとの差を付ける
+  const rivalAbility =
+    RIVAL_CONFIG.ABILITY_CENTER +
+    rng.nextInt(-RIVAL_CONFIG.ABILITY_VARIANCE, RIVAL_CONFIG.ABILITY_VARIANCE);
 
   // ライバルの初期人気
-  const basePopularity =
-    RIVAL_CONFIG.INITIAL_POPULARITY_MIN +
-    rng.nextInt(0, RIVAL_CONFIG.INITIAL_POPULARITY_MAX - RIVAL_CONFIG.INITIAL_POPULARITY_MIN);
+  const basePopularity = clampPopularity(
+    calculateBasePopularity(rivalAbility) +
+    rng.nextFloat(-RIVAL_CONFIG.INITIAL_POPULARITY_VARIANCE, RIVAL_CONFIG.INITIAL_POPULARITY_VARIANCE)
+  );
 
   // ジャンルなどをランダムに設定
   const genres: MangaConfiguration['genre'][] = [

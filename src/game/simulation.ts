@@ -94,7 +94,7 @@ export function advanceWeek(
 
   // ========== 5. 売上計算 ==========
   for (const manga of allMangas) {
-    updateSales(manga, state.currentWeek);
+    updateSales(manga, state.currentWeek, allMangas.length);
   }
 
   // ========== 6. 打ち切り危険度更新 ==========
@@ -103,7 +103,13 @@ export function advanceWeek(
   }
 
   // ========== 7. 連載終了判定（プレイヤー作品のみ） ==========
-  const endCondition = checkEndCondition(state.playerManga, state.currentWeek, rng, maxWeeks);
+  const endCondition = checkEndCondition(
+    state.playerManga,
+    state.currentWeek,
+    rng,
+    maxWeeks,
+    allMangas.length
+  );
 
   if (endCondition) {
     state.isActive = false;

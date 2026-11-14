@@ -34,14 +34,13 @@ export function calculatePlacementRanking(
 ): number {
   let adjustedRanking = manga.currentRanking;
 
-  // 編集部期待度による補正
-  // 期待度が高いと掲載順位が上がる可能性
-  const editorExpectationBonus = manga.editorExpectation * 1.5;
+  // 編集部期待度による小さな補正
+  const editorExpectationBonus = (manga.editorExpectation - 0.5) * 1.2;
   adjustedRanking -= editorExpectationBonus;
 
-  // 新連載補正（最初の5週は掲載順位を上げ気味に）
+  // 新連載補正（上位へ固定されない程度にする）
   if (manga.popularityHistory.length < 5) {
-    adjustedRanking -= 1.5;
+    adjustedRanking -= 0.5;
   }
 
   // 長期連載補正（20週以上だと、アンケート順位との乖離を戻す傾向）
@@ -53,14 +52,13 @@ export function calculatePlacementRanking(
   // 単行本売上による補正
   // 売上が好調だと編集部の推し度が上昇
   const salesPerVolume = manga.totalSales / Math.max(1, Math.floor(manga.popularityHistory.length / 8));
-  if (salesPerVolume > 75000) {
-    adjustedRanking -= 1.2;
-  } else if (salesPerVolume > 50000) {
-    adjustedRanking -= 0.8;
+  if (salesPerVolume > 200000) {
+    adjustedRanking -= 0.5;
+  } else if (salesPerVolume > 140000) {
+    adjustedRanking -= 0.25;
   }
 
-  // 掲載順位が0未満にならないように調整
-  return Math.max(1, Math.round(adjustedRanking));
+  return Math.max(1, Math.min(allMangas.length, Math.round(adjustedRanking)));
 }
 
 /**
@@ -94,7 +92,7 @@ export function countConsecutiveLowRankings(
 ): number {
   let count = 0;
   for (let i = manga.rankingHistory.length - 1; i >= 0; i--) {
-    if (manga.rankingHistory[i] <= lowRankingThreshold) {
+    if (manga.rankingHistory[i] >= lowRankingThreshold) {
       count++;
     } else {
       break;
@@ -110,5 +108,5 @@ export function countConsecutiveLowRankings(
 export function estimatePlacementPage(placementRanking: number, totalSerializations: number): number {
   // 掲載順位が良いほど早いページに掲載される
   // 簡易計算: 1位が1ページ目、2位が2ページ目、という線形関係
-  return Math.max(1, placementRanking);
+  return Math.max(1, Math.min(totalSerializations, placementRanking));
 }

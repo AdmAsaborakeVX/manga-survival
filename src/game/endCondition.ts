@@ -69,13 +69,14 @@ export function updateCancellationRisk(manga: SerializingManga, totalMangas = 6)
 
   // ========== コンポーネント1: 順位スコア ==========
   const recentAvgRanking = calculateAverageRanking(manga, 4);
-  // 順位6位が「平均的」、15位以上で「危険」
-  const rankingScore = Math.min(1, Math.max(0, (recentAvgRanking - 2) / (totalMangas + 4)));
+  const rankingScore = Math.min(
+    1,
+    Math.max(0, (recentAvgRanking - 1) / Math.max(1, totalMangas - 1))
+  );
 
   // ========== コンポーネント2: 人気スコア ==========
   const recentAvgPopularity = getAveragePopularityRecent(manga, 4);
-  // 人気40以上は「安全」、20以下で「危険」
-  const popularityScore = Math.min(1, Math.max(0, (40 - recentAvgPopularity) / 30));
+  const popularityScore = Math.min(1, Math.max(0, (48 - recentAvgPopularity) / 35));
 
   // ========== コンポーネント3: トレンドスコア ==========
   const trend = getPopularityTrend(manga, 4);
@@ -87,39 +88,26 @@ export function updateCancellationRisk(manga: SerializingManga, totalMangas = 6)
     manga,
     CANCELLATION_CONFIG.LOW_RANKING_THRESHOLD
   );
-  // 8週以上で最大危険度に（段階的）
-  const lowRankingScore = Math.min(1, consecutiveLowRankings / 8);
+  const lowRankingScore = Math.min(1, consecutiveLowRankings / 5);
 
-  // ========== 各コンポーネントの重み付け合成 ==========
-  // 順位と人気が主要、トレンドが二次的
   const currentRiskScore = 
-    rankingScore * 0.35 +
-    popularityScore * 0.35 +
-    trendScore * 0.15 +
-    lowRankingScore * 0.15;
+    rankingScore * 0.45 +
+    popularityScore * 0.25 +
+    trendScore * 0.1 +
+    lowRankingScore * 0.2;
 
-  // ========== 前週危険度の減衰と現週スコアの合成 ==========
-  // 前週危険度は50%残存、現週スコアは50%の重み
-  // これにより、短期的な悪化でも危険度が上昇しやすくなる
-  const decayFactor = 0.5;
-  const newScore = 0.5;
-  
   manga.cancellationRisk = 
-    manga.cancellationRisk * decayFactor + 
-    currentRiskScore * newScore;
+    manga.cancellationRisk * CANCELLATION_CONFIG.RISK_DECAY_RATE +
+    currentRiskScore * (1 - CANCELLATION_CONFIG.RISK_DECAY_RATE);
 
-  // ========== 期待度による補正 ==========
-  // 編集部期待度が高いと危険度を低下させやすくする
-  const expectationBonus = Math.max(0, manga.editorExpectation - 0.5) * 0.2;
+  const expectationBonus = Math.max(0, manga.editorExpectation - 0.5) * 0.08;
   manga.cancellationRisk = Math.max(0, manga.cancellationRisk - expectationBonus);
 
-  // ========== 売上による補正 ==========
-  // 単行本売上が好調だと危険度を低下
   const salesPerVolume = manga.totalSales / Math.max(1, Math.floor(weekNumber / 8));
-  if (salesPerVolume > 80000) {
-    manga.cancellationRisk *= 0.8;
-  } else if (salesPerVolume > 60000) {
+  if (salesPerVolume > 180000) {
     manga.cancellationRisk *= 0.85;
+  } else if (salesPerVolume > 120000) {
+    manga.cancellationRisk *= 0.93;
   }
 
   // ========== 正規化 ==========
@@ -133,7 +121,7 @@ export function updateCancellationRisk(manga: SerializingManga, totalMangas = 6)
  * 打ち切り判定（確定的）
  * 複数の条件を総合的に判定する
  */
-export function shouldBeCancelled(manga: SerializingManga): boolean {
+export function shouldBeCancelled(manga: SerializingManga, totalMangas = 6): boolean {
   const weekNumber = manga.popularityHistory.length;
 
   // 1週目は打ち切りにならない
@@ -142,53 +130,46 @@ export function shouldBeCancelled(manga: SerializingManga): boolean {
   }
 
   // ========== 条件1: 即座打ち切り（極端に悪い成績が続いている） ==========
-  // 人気 < 5 かつ 順位 > 20 が2週連続
   if (weekNumber >= 2) {
     const recentPopularities = manga.popularityHistory.slice(-2);
     const recentRankings = manga.rankingHistory.slice(-2);
     
     if (
-      recentPopularities.every((pop) => pop < 5) &&
-      recentRankings.every((rank) => rank > 20)
+      recentPopularities.every((pop) => pop < 8) &&
+      recentRankings.every((rank) => rank >= CANCELLATION_CONFIG.LOW_RANKING_THRESHOLD)
     ) {
       return true;
     }
   }
 
-  // ========== 条件2: 短期打ち切り（危険度が高い状態） ==========
-  // 危険度 > 0.7 が2週連続で低順位
-  if (manga.cancellationRisk > 0.7 && weekNumber >= 3) {
-    // 低順位が2週以上続いている
+  if (manga.cancellationRisk > 0.85 && weekNumber >= 3) {
     if (manga.lowRankingWeeks >= 2) {
       return true;
     }
   }
 
-  // ========== 条件3: 通常打ち切り（中期低迷） ==========
-  // 危険度が0.5を超えており、かつ以下のいずれかを満たす
-  if (manga.cancellationRisk > 0.5) {
-    // 3a. 連続低順位が5週以上
-    if (manga.lowRankingWeeks >= 5) {
+  if (weekNumber < CANCELLATION_CONFIG.MIN_WEEKS_TO_CANCEL) {
+    return false;
+  }
+
+  if (manga.cancellationRisk > 0.68 && manga.lowRankingWeeks >= 2) {
+    return true;
+  }
+
+  if (manga.cancellationRisk > 0.4) {
+    if (manga.lowRankingWeeks >= 3) {
       return true;
     }
 
-    // 3b. 平均順位が低い状態が10週以上継続
     const avgRanking = calculateAverageRanking(manga, 10);
-    if (avgRanking >= 5 && weekNumber >= 10) {
+    if (avgRanking >= totalMangas * 0.7 && weekNumber >= 10) {
       return true;
     }
 
-    // 3c. 平均人気が極端に低い
     const avgPopularity = getAveragePopularityRecent(manga, 6);
     if (avgPopularity < 20 && weekNumber >= 6) {
       return true;
     }
-  }
-
-  // ========== 条件4: 完全に期待を失った状態 ==========
-  // 危険度 > 0.85
-  if (manga.cancellationRisk > 0.85) {
-    return true;
   }
 
   return false;
@@ -200,10 +181,11 @@ export function shouldBeCancelled(manga: SerializingManga): boolean {
  */
 export function shouldBeCancelledWithChance(
   manga: SerializingManga,
-  rng: SeededRandom
+  rng: SeededRandom,
+  totalMangas = 6
 ): boolean {
   // 確定的な打ち切り判定
-  if (shouldBeCancelled(manga)) {
+  if (shouldBeCancelled(manga, totalMangas)) {
     // 危険度が高いほど確実に打ち切り
     // 危険度0.5なら50%の確率で救われる
     const survivalChance = Math.max(0, 1 - manga.cancellationRisk);
@@ -216,7 +198,7 @@ export function shouldBeCancelledWithChance(
 /**
  * 円満完結判定
  */
-export function shouldComplete(manga: SerializingManga): boolean {
+export function shouldComplete(manga: SerializingManga, totalMangas = 6): boolean {
   const weeksRun = manga.popularityHistory.length;
 
   // 条件1: 最小連載期間を満たしている
@@ -230,9 +212,9 @@ export function shouldComplete(manga: SerializingManga): boolean {
     return false;
   }
 
-  // 条件3: 平均順位が一定以上
+  // 条件3: 雑誌内で上位40%程度の平均順位を保っている
   const avgRanking = calculateAverageRanking(manga);
-  if (avgRanking > COMPLETION_CONFIG.MIN_AVERAGE_RANKING) {
+  if (avgRanking > totalMangas * COMPLETION_CONFIG.MAX_AVERAGE_RANKING_RATIO) {
     return false;
   }
 
@@ -241,8 +223,36 @@ export function shouldComplete(manga: SerializingManga): boolean {
     return false;
   }
 
-  // 全ての条件を満たせば完結可能
-  return true;
+  return manga.editorExpectation >= 0.55;
+}
+
+function calculateCompletionChance(manga: SerializingManga, totalMangas: number): number {
+  const averagePopularity =
+    manga.popularityHistory.reduce((sum, value) => sum + value, 0) /
+    Math.max(1, manga.popularityHistory.length);
+  const averageRanking = calculateAverageRanking(manga);
+  const maxCompletionRanking = totalMangas * COMPLETION_CONFIG.MAX_AVERAGE_RANKING_RATIO;
+  const popularityScore = Math.min(1, Math.max(0,
+    (averagePopularity - COMPLETION_CONFIG.MIN_AVERAGE_POPULARITY) / 18
+  ));
+  const rankingScore = Math.min(1, Math.max(0,
+    (maxCompletionRanking - averageRanking) / Math.max(1, maxCompletionRanking - 1)
+  ));
+  const salesScore = Math.min(1, Math.max(0,
+    (manga.totalSales - COMPLETION_CONFIG.MIN_TOTAL_SALES) / 1400000
+  ));
+  const expectationScore = Math.min(1, Math.max(0, (manga.editorExpectation - 0.5) / 0.4));
+  const safetyScore = Math.min(1, Math.max(0, 1 - manga.cancellationRisk / 0.5));
+
+  return Math.min(
+    0.75,
+    0.05 +
+      popularityScore * 0.15 +
+      rankingScore * 0.18 +
+      salesScore * 0.12 +
+      expectationScore * 0.08 +
+      safetyScore * 0.17
+  );
 }
 
 /**
@@ -253,7 +263,8 @@ export function checkEndCondition(
   manga: SerializingManga,
   currentWeek: number,
   rng: SeededRandom,
-  maxWeeks: number = GAME_CONFIG.maxSerializationWeeks
+  maxWeeks: number = GAME_CONFIG.maxSerializationWeeks,
+  totalMangas = 6
 ): 'cancelled' | 'completed' | null {
   // 最大連載期間に到達
   if (currentWeek >= maxWeeks) {
@@ -261,14 +272,12 @@ export function checkEndCondition(
   }
 
   // 打ち切り判定
-  if (shouldBeCancelledWithChance(manga, rng)) {
+  if (shouldBeCancelledWithChance(manga, rng, totalMangas)) {
     return 'cancelled';
   }
 
   // 円満完結判定
-  if (shouldComplete(manga)) {
-    // ただし確定ではなく、一定確率で選択制にする（プレイヤーが続行を選べる可能性）
-    // 今回の実装では自動終了とする
+  if (shouldComplete(manga, totalMangas) && rng.next() < calculateCompletionChance(manga, totalMangas)) {
     return 'completed';
   }
 

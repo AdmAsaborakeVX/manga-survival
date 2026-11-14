@@ -18,7 +18,11 @@ export function shouldReleaseVolume(manga: SerializingManga, currentWeek: number
  * - 順位
  * - 固定ファンの強さ（安定性で推測）
  */
-export function calculateVolumeSales(manga: SerializingManga, currentWeek: number): number {
+export function calculateVolumeSales(
+  manga: SerializingManga,
+  currentWeek: number,
+  totalMangas = 6
+): number {
   // 基本売上（定数）
   let sales = SALES_CONFIG.BASE_SALES_PER_VOLUME;
 
@@ -32,7 +36,10 @@ export function calculateVolumeSales(manga: SerializingManga, currentWeek: numbe
   }
 
   // 順位による補正（好順位ほど売上が増える）
-  const rankingBonus = Math.max(0, (15 - manga.currentRanking) * SALES_CONFIG.RANKING_BONUS_FACTOR);
+  const rankingBonus = Math.max(
+    0,
+    (totalMangas + 1 - manga.currentRanking) * SALES_CONFIG.RANKING_BONUS_FACTOR
+  );
   sales += rankingBonus;
 
   // 安定性による加算（固定ファンの強さ）
@@ -70,14 +77,14 @@ export function getEventSalesBonus(manga: SerializingManga, currentWeek: number)
 /**
  * 週ごとの売上更新処理
  */
-export function updateSales(manga: SerializingManga, currentWeek: number): void {
+export function updateSales(manga: SerializingManga, currentWeek: number, totalMangas = 6): void {
   // 単行本発売時のみ計算
   if (!shouldReleaseVolume(manga, currentWeek)) {
     return;
   }
 
   // 基本売上を計算
-  const volumeSales = calculateVolumeSales(manga, currentWeek);
+  const volumeSales = calculateVolumeSales(manga, currentWeek, totalMangas);
 
   // イベントボーナスを追加
   const eventBonus = getEventSalesBonus(manga, currentWeek);

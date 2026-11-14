@@ -3,6 +3,7 @@ import type { ChangeEvent } from 'react';
 import { GAME_CONFIG, MANGA_CONFIG_OPTIONS, RIVAL_CONFIG } from '@/game/config';
 import {
   createComparisonProfiles,
+  createBalancedAbilitySettings,
   createDefaultSimulationSettings,
   runSimulationTrial,
   summarizeSimulationTrials,
@@ -36,6 +37,31 @@ function formatNumber(value: number, digits = 1): string {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
+}
+
+function getBalancedTotal(settings: SimulationTestSettings): string {
+  const { mangakaAbility, editorAbility } = settings;
+  if (
+    mangakaAbility.mode !== 'fixed' ||
+    editorAbility.mode !== 'fixed'
+  ) {
+    return '';
+  }
+
+  for (const total of [100, 130, 160]) {
+    const preset = createBalancedAbilitySettings(total);
+    if (
+      mangakaAbility.value === preset.mangakaAbility.value &&
+      editorAbility.value === preset.editorAbility.value &&
+      ABILITY_FIELDS.every(({ key }) => {
+        const setting = settings.abilities[key];
+        return setting.mode === 'fixed' && setting.value === preset.abilities[key].value;
+      })
+    ) {
+      return String(total);
+    }
+  }
+  return '';
 }
 
 function ValueControl({
@@ -228,6 +254,18 @@ function SummaryResults({ summary }: { summary: SimulationSummary }) {
               value={`${formatNumber(summary.durationRates[threshold as 8 | 20 | 40 | 60 | 80 | 100])}%`}
             />
           ))}
+          <Stat label="10〜20週に打ち切り" value={`${formatNumber(summary.durationRates.cancelled10To20)}%`} />
+        </div>
+      </section>
+
+      <section className="sim-section">
+        <h2>実際に使用した能力 (平均)</h2>
+        <div className="sim-stat-grid">
+          <Stat label="漫画家 / 編集者 / 総合" value={`${formatNumber(summary.averageMangakaAbility)} / ${formatNumber(summary.averageEditorAbility)} / ${formatNumber(summary.averageTotalAbility)}`} />
+          <Stat
+            label="作品能力 (ストーリー / キャラクター / 画力 / 独自性 / 構成)"
+            value={Object.values(summary.averageAbilities).map((value) => formatNumber(value)).join(' / ')}
+          />
         </div>
       </section>
 
@@ -253,7 +291,7 @@ function SummaryResults({ summary }: { summary: SimulationSummary }) {
       <section className="sim-section">
         <h2>人気・順位・売上</h2>
         <div className="sim-stat-grid">
-          <Stat label="最大人気 平均 / 中央値" value={`${formatNumber(summary.averagePeakPopularity)} / ${formatNumber(summary.medianPeakPopularity)}`} />
+          <Stat label="最大人気 平均 / 中央値 / 全体最高" value={`${formatNumber(summary.averagePeakPopularity)} / ${formatNumber(summary.medianPeakPopularity)} / ${formatNumber(summary.maxPeakPopularity)}`} />
           <Stat label="最終人気 平均 / 中央値" value={`${formatNumber(summary.averageFinalPopularity)} / ${formatNumber(summary.medianFinalPopularity)}`} />
           <Stat label="平均アンケート順位" value={`${formatNumber(summary.averageRanking)}位`} />
           <Stat label="最高アンケート順位 (最良)" value={`${formatNumber(summary.bestRanking)}位`} />
@@ -541,6 +579,24 @@ export default function SimulationTestScreen() {
 
         <section className="sim-settings-panel">
           <h2>漫画家・編集者能力</h2>
+          <label className="sim-field">
+            <span>総合能力 (バランス型)</span>
+            <select
+              aria-label="バランス型の総合能力値"
+              value={getBalancedTotal(settings)}
+              onChange={(event) => setSettings((current) => ({
+                ...current,
+                ...createBalancedAbilitySettings(Number(event.target.value)),
+              }))}
+              disabled={isRunning}
+            >
+              <option value="" disabled>個別設定</option>
+              <option value="100">100 (20 / 20 / 20 / 20 / 20)</option>
+              <option value="130">130 (26 / 26 / 26 / 26 / 26)</option>
+              <option value="160">160 (32 / 32 / 32 / 32 / 32)</option>
+            </select>
+            <small>選択すると漫画家・編集者能力と5項目を固定します。比較実行では下の比較プロファイルを使用します。</small>
+          </label>
           <div className="sim-value-grid">
             <ValueControl
               label="漫画家能力"
