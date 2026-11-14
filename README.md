@@ -1,3 +1,7 @@
+# 概要
+・シミュレーションテスト修正
+・人気の高止まり問題修正、終了判定のバグを修正
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
