@@ -261,7 +261,7 @@
 
 /* Animation state */
 .ability-allocation-step.animating {
-  opacity: 0.3;
+  opacity: 0.8;
   pointer-events: none;
 }
 
