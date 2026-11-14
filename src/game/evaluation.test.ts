@@ -9,30 +9,36 @@ import {
 describe('popularity evaluation boundaries', () => {
   it.each([
     [50000, 1, '中堅'],
-    [50001, 1, '準看板'],
+    [50001, 1, '主力'],
     [150000, 11, '下層'],
     [150001, 11, '中堅'],
     [400000, 1, '準看板'],
+    [400000, 6, '主力'],
+    [400000, 16, '下層'],
     [400001, 1, '看板'],
     [1000000, 6, '準看板'],
-    [1000001, 6, '主力'],
+    [1000000, 11, '主力'],
+    [1000000, 16, '中堅'],
+    [1000001, 6, '看板'],
   ] as const)('maps sales %i and placement %i to %s', (sales, placement, expected) => {
     expect(evaluatePopularity(sales, placement)).toBe(expected);
   });
 
   it.each([
     [5, '看板'],
-    [6, '主力'],
-    [10, '主力'],
-    [11, '主力'],
-    [15, '主力'],
+    [6, '看板'],
+    [10, '看板'],
+    [11, '準看板'],
+    [15, '準看板'],
     [16, '主力'],
   ] as const)('maps placement boundary %i to %s for sales above 100万', (placement, expected) => {
     expect(evaluatePopularity(1000001, placement)).toBe(expected);
   });
 
-  it('uses the placement cutoffs at 5, 10, and 15 for lower sales bands', () => {
-    expect(evaluatePopularity(50000, 10)).toBe('中堅');
+  it('uses the placement cutoffs at 5, 10, and 15 for sales up to 5万', () => {
+    expect(evaluatePopularity(50000, 5)).toBe('中堅');
+    expect(evaluatePopularity(50000, 6)).toBe('下層');
+    expect(evaluatePopularity(50000, 10)).toBe('下層');
     expect(evaluatePopularity(50000, 11)).toBe('下層');
     expect(evaluatePopularity(50000, 15)).toBe('下層');
     expect(evaluatePopularity(50000, 16)).toBe('下層');
