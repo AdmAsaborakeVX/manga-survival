@@ -1,4 +1,6 @@
 import type { SerializingManga } from '@/types';
+import { PLACEMENT_CONFIG } from '@/game/config';
+import { SeededRandom } from '@/utils/seededRandom';
 
 /**
  * 全作品の人気値からアンケート順位を算出
@@ -7,10 +9,7 @@ import type { SerializingManga } from '@/types';
 export function calculateRankings(allMangas: SerializingManga[]): Map<string, number> {
   const rankings = new Map<string, number>();
 
-  // 人気の高い順でソート
   const sorted = [...allMangas].sort((a, b) => b.currentPopularity - a.currentPopularity);
-
-  // 順位を付与
   sorted.forEach((manga, index) => {
     rankings.set(manga.id, index + 1);
   });
@@ -18,55 +17,83 @@ export function calculateRankings(allMangas: SerializingManga[]): Map<string, nu
   return rankings;
 }
 
+function getSmoothedSurveyRanking(manga: SerializingManga): number {
+  const recentRankings = manga.rankingHistory.slice(-PLACEMENT_CONFIG.SURVEY_HISTORY_WEEKS);
+  if (recentRankings.length === 0) return manga.currentRanking;
+
+  return recentRankings.reduce((total, rank) => total + rank, 0) / recentRankings.length;
+}
+
+function getPlacementScore(manga: SerializingManga): number {
+  const smoothedSurveyRanking = getSmoothedSurveyRanking(manga);
+  const adjustedRanking =
+    smoothedSurveyRanking * PLACEMENT_CONFIG.SURVEY_SCORE_WEIGHT +
+    manga.currentPlacementRanking * PLACEMENT_CONFIG.PREVIOUS_PLACEMENT_WEIGHT;
+
+  const editorExpectationBonus =
+    (manga.editorExpectation - 0.5) * PLACEMENT_CONFIG.EDITOR_EXPECTATION_FACTOR;
+  const weeksSerialized = manga.popularityHistory.length;
+  const newSerialBonus =
+    weeksSerialized < 5 ? PLACEMENT_CONFIG.NEW_SERIAL_BONUS : 0;
+  const longSerialPenalty =
+    weeksSerialized >= 20 ? PLACEMENT_CONFIG.LONG_SERIAL_PENALTY : 0;
+  const salesPerVolume = manga.totalSales / Math.max(1, manga.salesHistory.length);
+  const salesBonus =
+    salesPerVolume > PLACEMENT_CONFIG.HIGH_SALES_THRESHOLD
+      ? PLACEMENT_CONFIG.HIGH_SALES_BONUS
+      : salesPerVolume > PLACEMENT_CONFIG.MEDIUM_SALES_THRESHOLD
+        ? PLACEMENT_CONFIG.MEDIUM_SALES_BONUS
+        : 0;
+
+  return adjustedRanking - editorExpectationBonus - newSerialBonus - salesBonus + longSerialPenalty;
+}
+
+function getPlacementOrder(allMangas: SerializingManga[], seed?: number): SerializingManga[] {
+  const scoredMangas = allMangas.map((manga, index) => {
+    let score = getPlacementScore(manga);
+    if (seed !== undefined && score <= PLACEMENT_CONFIG.TOP_RANK_NOISE_THRESHOLD) {
+      const mangaSeed = seed ^ Math.imul(index + 1, 0x9e3779b9);
+      const rng = new SeededRandom(mangaSeed);
+      score += rng.nextFloat(
+        -PLACEMENT_CONFIG.TOP_RANK_NOISE,
+        PLACEMENT_CONFIG.TOP_RANK_NOISE
+      );
+    }
+    return { manga, score };
+  });
+
+  return scoredMangas.sort((a, b) => {
+    const scoreDifference = a.score - b.score;
+    if (scoreDifference !== 0) return scoreDifference;
+    const previousRankDifference =
+      a.manga.currentPlacementRanking - b.manga.currentPlacementRanking;
+    return previousRankDifference || a.manga.id.localeCompare(b.manga.id);
+  }).map(({ manga }) => manga);
+}
+
 /**
- * アンケート順位から掲載順位を算出
- * 
- * 掲載順位はアンケート順位を基本としながらも、以下の要因で調整される：
- * - 編集部期待度
- * - 新連載補正（開始時の特典）
- * - 長期連載作品への補正（マンネリ化防止）
- * - 単行本売上
- * - イベント補正
+ * 平滑化したアンケート順位を全作品で比較して掲載順位を算出
  */
 export function calculatePlacementRanking(
   manga: SerializingManga,
-  allMangas: SerializingManga[]
+  allMangas: SerializingManga[],
+  seed?: number
 ): number {
-  let adjustedRanking = manga.currentRanking;
-
-  // 編集部期待度による小さな補正
-  const editorExpectationBonus = (manga.editorExpectation - 0.5) * 1.2;
-  adjustedRanking -= editorExpectationBonus;
-
-  // 新連載補正（上位へ固定されない程度にする）
-  if (manga.popularityHistory.length < 5) {
-    adjustedRanking -= 0.5;
-  }
-
-  // 長期連載補正（20週以上だと、アンケート順位との乖離を戻す傾向）
-  if (manga.popularityHistory.length >= 20) {
-    // この補正により、長期連載でも安定して掲載されやすくなる
-    adjustedRanking += 0.5;
-  }
-
-  // 単行本売上による補正
-  // 売上が好調だと編集部の推し度が上昇
-  const salesPerVolume = manga.totalSales / Math.max(1, manga.salesHistory.length);
-  if (salesPerVolume > 200000) {
-    adjustedRanking -= 0.5;
-  } else if (salesPerVolume > 140000) {
-    adjustedRanking -= 0.25;
-  }
-
-  return Math.max(1, Math.min(allMangas.length, Math.round(adjustedRanking)));
+  const order = getPlacementOrder(allMangas, seed);
+  const index = order.findIndex((entry) => entry.id === manga.id);
+  return index < 0 ? Math.max(1, Math.min(allMangas.length, manga.currentRanking)) : index + 1;
 }
 
 /**
  * 複数の作品の掲載順位を一括計算
  */
-export function updatePlacementRankings(allMangas: SerializingManga[]): void {
+export function updatePlacementRankings(allMangas: SerializingManga[], seed?: number): void {
+  const order = getPlacementOrder(allMangas, seed);
+  order.forEach((manga, index) => {
+    manga.currentPlacementRanking = index + 1;
+  });
+
   allMangas.forEach((manga) => {
-    manga.currentPlacementRanking = calculatePlacementRanking(manga, allMangas);
     manga.placementHistory?.push(manga.currentPlacementRanking);
   });
 }
@@ -107,7 +134,5 @@ export function countConsecutiveLowRankings(
  * （UI表示用。実際のページは将来的に別途計算される可能性）
  */
 export function estimatePlacementPage(placementRanking: number, totalSerializations: number): number {
-  // 掲載順位が良いほど早いページに掲載される
-  // 簡易計算: 1位が1ページ目、2位が2ページ目、という線形関係
   return Math.max(1, Math.min(totalSerializations, placementRanking));
 }

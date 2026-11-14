@@ -35,6 +35,7 @@ export interface SimulationTrial {
   endReason: string;
   peakPopularity: number;
   finalPopularity: number;
+  averagePopularity: number;
   averageRanking: number;
   bestRanking: number;
   finalRanking: number;
@@ -56,6 +57,19 @@ export interface WeeklyAggregate {
   averageCancellationRisk: number;
 }
 
+export interface PlacementPeriodAggregate {
+  startWeek: number;
+  endWeek: number;
+  count: number;
+  averagePlacement: number;
+}
+
+export interface PlacementChangeBand {
+  label: string;
+  count: number;
+  percent: number;
+}
+
 export interface SimulationSummary {
   total: number;
   averageWeeks: number;
@@ -75,11 +89,23 @@ export interface SimulationSummary {
   maxPeakPopularity: number;
   averageFinalPopularity: number;
   medianFinalPopularity: number;
+  averagePopularityPlacementCorrelation: number;
+  abilityPlacementCorrelation: number;
   averageRanking: number;
   bestRanking: number;
   finalRanking: number;
   averagePlacement: number;
   finalPlacement: number;
+  bestPlacement: number;
+  worstPlacement: number;
+  averageWeeklyPlacementChange: number;
+  tenPlusPlacementChanges: number;
+  placementChangeDistribution: PlacementChangeBand[];
+  firstPlaceCount: number;
+  firstPlaceRate: number;
+  maxConsecutiveFirstPlaceWeeks: number;
+  averagePlacementGap: number;
+  placementPeriods: PlacementPeriodAggregate[];
   averageSales: number;
   medianSales: number;
   maxSales: number;
@@ -287,6 +313,20 @@ function averageRankings(manga: SerializingManga): number {
   return average(manga.rankingHistory);
 }
 
+function correlation(first: number[], second: number[]): number {
+  if (first.length !== second.length || first.length < 2) return 0;
+  const firstAverage = average(first);
+  const secondAverage = average(second);
+  const covariance = average(first.map((value, index) =>
+    (value - firstAverage) * (second[index] - secondAverage)
+  ));
+  const firstDeviation = Math.sqrt(average(first.map((value) => (value - firstAverage) ** 2)));
+  const secondDeviation = Math.sqrt(average(second.map((value) => (value - secondAverage) ** 2)));
+  return firstDeviation === 0 || secondDeviation === 0
+    ? 0
+    : covariance / (firstDeviation * secondDeviation);
+}
+
 export function runSimulationTrial(
   settings: SimulationTestSettings,
   trialSeed: number
@@ -314,6 +354,7 @@ export function runSimulationTrial(
     endReason: state.endReason ?? 'other',
     peakPopularity: Math.max(player.currentPopularity, ...popularity),
     finalPopularity: player.currentPopularity,
+    averagePopularity: average(popularity),
     averageRanking: averageRankings(player),
     bestRanking: player.rankingHistory.length > 0 ? Math.min(...player.rankingHistory) : player.currentRanking,
     finalRanking: player.currentRanking,
@@ -367,6 +408,66 @@ export function summarizeSimulationTrials(trials: SimulationTrial[]): Simulation
   });
 
   const maxWeek = Math.max(...trials.map((trial) => trial.weeks));
+  const placementChanges = trials.flatMap((trial) =>
+    trial.placements.slice(1).map((placement, index) =>
+      Math.abs(placement - trial.placements[index])
+    )
+  );
+  const changeRanges = [
+    { label: '変動なし', minimum: 0, maximum: 0 },
+    { label: '1〜2位', minimum: 1, maximum: 2 },
+    { label: '3〜5位', minimum: 3, maximum: 5 },
+    { label: '6〜9位', minimum: 6, maximum: 9 },
+    { label: '10位以上', minimum: 10, maximum: Number.POSITIVE_INFINITY },
+  ];
+  const placementChangeDistribution = changeRanges.map(({ label, minimum, maximum }) => {
+    const count = placementChanges.filter((change) => change >= minimum && change <= maximum).length;
+    return {
+      label,
+      count,
+      percent: placementChanges.length === 0 ? 0 : (count / placementChanges.length) * 100,
+    };
+  });
+  let maxConsecutiveFirstPlaceWeeks = 0;
+  let firstPlaceCount = 0;
+  for (const trial of trials) {
+    let consecutiveFirstPlaceWeeks = 0;
+    for (const placement of trial.placements) {
+      if (placement === 1) {
+        firstPlaceCount++;
+        consecutiveFirstPlaceWeeks++;
+        maxConsecutiveFirstPlaceWeeks = Math.max(
+          maxConsecutiveFirstPlaceWeeks,
+          consecutiveFirstPlaceWeeks
+        );
+      } else {
+        consecutiveFirstPlaceWeeks = 0;
+      }
+    }
+  }
+  const totalPlacements = trials.reduce((total, trial) => total + trial.placements.length, 0);
+  let bestPlacement = Number.POSITIVE_INFINITY;
+  let worstPlacement = Number.NEGATIVE_INFINITY;
+  for (const trial of trials) {
+    const observed = trial.placements.length > 0 ? trial.placements : [trial.finalPlacement];
+    for (const placement of observed) {
+      bestPlacement = Math.min(bestPlacement, placement);
+      worstPlacement = Math.max(worstPlacement, placement);
+    }
+  }
+  const placementPeriods: PlacementPeriodAggregate[] = [];
+  for (let startIndex = 0; startIndex < maxWeek; startIndex += 10) {
+    const periodAverages = trials
+      .map((trial) => trial.placements.slice(startIndex, startIndex + 10))
+      .filter((period) => period.length > 0)
+      .map((period) => average(period));
+    placementPeriods.push({
+      startWeek: startIndex + 1,
+      endWeek: Math.min(startIndex + 10, maxWeek),
+      count: periodAverages.length,
+      averagePlacement: average(periodAverages),
+    });
+  }
   const weekly: WeeklyAggregate[] = [];
   for (let index = 0; index < maxWeek; index++) {
     const active = trials.filter((trial) => trial.popularity.length > index);
@@ -426,11 +527,30 @@ export function summarizeSimulationTrials(trials: SimulationTrial[]): Simulation
     maxPeakPopularity: Math.max(...trials.map((trial) => trial.peakPopularity)),
     averageFinalPopularity: average(trials.map((trial) => trial.finalPopularity)),
     medianFinalPopularity: median(trials.map((trial) => trial.finalPopularity)),
+    averagePopularityPlacementCorrelation: correlation(
+      trials.map((trial) => trial.averagePopularity),
+      trials.map((trial) => trial.averagePlacement)
+    ),
+    abilityPlacementCorrelation: correlation(
+      trials.map((trial) => trial.totalAbility),
+      trials.map((trial) => trial.averagePlacement)
+    ),
     averageRanking: average(trials.map((trial) => trial.averageRanking)),
     bestRanking: Math.min(...trials.map((trial) => trial.bestRanking)),
     finalRanking: average(trials.map((trial) => trial.finalRanking)),
     averagePlacement: average(trials.map((trial) => trial.averagePlacement)),
     finalPlacement: average(trials.map((trial) => trial.finalPlacement)),
+    bestPlacement,
+    worstPlacement,
+    averageWeeklyPlacementChange: average(placementChanges),
+    tenPlusPlacementChanges:
+      placementChangeDistribution.find((band) => band.label === '10位以上')?.count ?? 0,
+    placementChangeDistribution,
+    firstPlaceCount,
+    firstPlaceRate: totalPlacements === 0 ? 0 : (firstPlaceCount / totalPlacements) * 100,
+    maxConsecutiveFirstPlaceWeeks,
+    averagePlacementGap: average(trials.map((trial) => trial.averagePlacement - trial.averageRanking)),
+    placementPeriods,
     averageSales: average(sales),
     medianSales: median(sales),
     maxSales: Math.max(...sales),
@@ -457,7 +577,10 @@ export function createComparisonProfiles(): Array<{
   return [
     { id: 'total-100', label: '総合100・バランス', mangaka: 50, editor: 50, abilities: balanceAbilities(100) },
     { id: 'total-130', label: '総合130・バランス', mangaka: 65, editor: 65, abilities: balanceAbilities(130) },
+    { id: 'total-140', label: '総合140・バランス', mangaka: 70, editor: 70, abilities: balanceAbilities(140) },
+    { id: 'total-150', label: '総合150・バランス', mangaka: 75, editor: 75, abilities: balanceAbilities(150) },
     { id: 'total-160', label: '総合160・バランス', mangaka: 80, editor: 80, abilities: balanceAbilities(160) },
+    { id: 'total-170', label: '総合170・バランス', mangaka: 85, editor: 85, abilities: balanceAbilities(170) },
     ...ABILITY_KEYS.map((key) => ({
       id: `special-${key}`,
       label: `${({ story: 'ストーリー', character: 'キャラクター', artwork: '作画', originality: '独自性', composition: '構成' })[key]}特化`,

@@ -49,7 +49,7 @@ function getBalancedTotal(settings: SimulationTestSettings): string {
     return '';
   }
 
-  for (const total of [100, 130, 160]) {
+  for (const total of [100, 130, 140, 150, 160, 170]) {
     const preset = createBalancedAbilitySettings(total);
     if (
       mangakaAbility.value === preset.mangakaAbility.value &&
@@ -238,6 +238,8 @@ function SummaryResults({ summary }: { summary: SimulationSummary }) {
   const medianPopularitySeries = summary.weekly.map((item) => item.medianPopularity);
   const placementSeries = summary.weekly.map((item) => item.medianPlacement);
   const riskSeries = summary.weekly.map((item) => item.averageCancellationRisk);
+  const extremeChangeRate =
+    summary.placementChangeDistribution.find((band) => band.label === '10位以上')?.percent ?? 0;
 
   return (
     <div className="sim-results">
@@ -298,9 +300,34 @@ function SummaryResults({ summary }: { summary: SimulationSummary }) {
           <Stat label="最高アンケート順位 (最良)" value={`${formatNumber(summary.bestRanking)}位`} />
           <Stat label="最終アンケート順位" value={`${formatNumber(summary.finalRanking)}位`} />
           <Stat label="平均掲載順位" value={`${formatNumber(summary.averagePlacement)}位`} />
+          <Stat label="掲載順位の最良 / 最悪" value={`${summary.bestPlacement} / ${summary.worstPlacement}位`} />
           <Stat label="最終掲載順位" value={`${formatNumber(summary.finalPlacement)}位`} />
+          <Stat label="アンケート平均との掲載順位差" value={`${formatNumber(summary.averagePlacementGap)}位`} />
+          <Stat label="週次の平均変動幅" value={`${formatNumber(summary.averageWeeklyPlacementChange)}位`} />
+          <Stat label="10位以上の急変" value={`${summary.tenPlusPlacementChanges.toLocaleString()}回 (${formatNumber(extremeChangeRate)}%)`} />
+          <Stat label="1位掲載回数 / 率" value={`${summary.firstPlaceCount.toLocaleString()}回 / ${formatNumber(summary.firstPlaceRate)}%`} />
+          <Stat label="連続1位の最大週数" value={`${summary.maxConsecutiveFirstPlaceWeeks}週`} />
+          <Stat label="平均人気-平均掲載順位 相関" value={formatNumber(summary.averagePopularityPlacementCorrelation, 3)} />
+          <Stat label="能力-平均掲載順位 相関" value={formatNumber(summary.abilityPlacementCorrelation, 3)} />
           <Stat label="累計売上 平均 / 中央値" value={`${formatNumber(summary.averageSales / 1000000, 2)} / ${formatNumber(summary.medianSales / 1000000, 2)}百万円`} />
           <Stat label="最大累計売上" value={`${formatNumber(summary.maxSales / 1000000, 2)}百万円`} />
+        </div>
+      </section>
+
+      <section className="sim-section">
+        <h2>掲載順位の変動と10週平均</h2>
+        <div className="sim-change-bands">
+          {summary.placementChangeDistribution.map((band) => (
+            <span key={band.label}>{band.label}: {band.count.toLocaleString()}回 ({formatNumber(band.percent)}%)</span>
+          ))}
+        </div>
+        <div className="sim-period-list">
+          {summary.placementPeriods.map((period) => (
+            <span key={period.startWeek}>
+              {period.startWeek}〜{period.endWeek}週: {formatNumber(period.averagePlacement)}位
+              <small> ({period.count.toLocaleString()}作品)</small>
+            </span>
+          ))}
         </div>
       </section>
 
@@ -349,7 +376,13 @@ export default function SimulationTestScreen() {
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const profiles = useMemo(() => createComparisonProfiles(), []);
-  const [selectedProfiles, setSelectedProfiles] = useState<string[]>(['total-100', 'total-130', 'total-160']);
+  const [selectedProfiles, setSelectedProfiles] = useState<string[]>([
+    'total-130',
+    'total-140',
+    'total-150',
+    'total-160',
+    'total-170',
+  ]);
   const cancelRef = useRef(false);
 
   const trialCount = Number(trialInput);
@@ -592,9 +625,11 @@ export default function SimulationTestScreen() {
               disabled={isRunning}
             >
               <option value="" disabled>個別設定</option>
-              <option value="100">100 (20 / 20 / 20 / 20 / 20)</option>
-              <option value="130">130 (26 / 26 / 26 / 26 / 26)</option>
-              <option value="160">160 (32 / 32 / 32 / 32 / 32)</option>
+              {[100, 130, 140, 150, 160, 170].map((total) => (
+                <option key={total} value={total}>
+                  {total} ({Object.values(createBalancedAbilitySettings(total).abilities).map((ability) => ability.value).join(' / ')})
+                </option>
+              ))}
             </select>
             <small>選択すると漫画家・編集者能力と5項目を固定します。比較実行では下の比較プロファイルを使用します。</small>
           </label>
@@ -693,6 +728,30 @@ function ComparisonResults({
   results: Array<{ label: string; summary: SimulationSummary }>;
 }) {
   const maxWeeks = Math.max(1, ...results.map((result) => result.summary.averageWeeks));
+  const abilityCorrelation = (() => {
+    const points = results.map(({ summary }) => ({
+      ability: summary.averageTotalAbility,
+      placement: summary.averagePlacement,
+    }));
+    const averageAbility = points.reduce((total, point) => total + point.ability, 0) / points.length;
+    const averagePlacement = points.reduce((total, point) => total + point.placement, 0) / points.length;
+    const covariance = points.reduce(
+      (total, point) => total + (point.ability - averageAbility) * (point.placement - averagePlacement),
+      0
+    );
+    const abilityDeviation = Math.sqrt(points.reduce(
+      (total, point) => total + (point.ability - averageAbility) ** 2,
+      0
+    ));
+    const placementDeviation = Math.sqrt(points.reduce(
+      (total, point) => total + (point.placement - averagePlacement) ** 2,
+      0
+    ));
+    return abilityDeviation === 0 || placementDeviation === 0
+      ? 0
+      : covariance / (abilityDeviation * placementDeviation);
+  })();
+  const periodCount = Math.max(0, ...results.map((result) => result.summary.placementPeriods.length));
   return (
     <section className="sim-results sim-comparison-results">
       <h2>能力条件の比較 ({results[0]?.summary.total.toLocaleString()}回 / 条件)</h2>
@@ -700,23 +759,56 @@ function ComparisonResults({
         <table className="sim-comparison-table">
           <thead>
             <tr>
-              <th>条件</th><th>平均週数</th><th>中央値</th><th>40週以上</th><th>80週以上</th><th>打ち切り率</th>
+              <th>能力</th><th>平均アンケート順位</th><th>平均掲載順位</th><th>最良 / 最悪掲載</th>
+              <th>平均変動幅</th><th>10位以上の急変</th><th>1位掲載率</th><th>最大連続1位</th>
+              <th>人気-掲載相関</th>
             </tr>
           </thead>
           <tbody>
             {results.map(({ label, summary }) => {
-              const cancelRate = summary.endReasons.find((item) => item.reason === 'cancelled')?.percent ?? 0;
+              const extremeChangeRate =
+                summary.placementChangeDistribution.find((band) => band.label === '10位以上')?.percent ?? 0;
               return (
                 <tr key={label}>
                   <th>{label}</th>
-                  <td>{formatNumber(summary.averageWeeks)}週</td>
-                  <td>{formatNumber(summary.medianWeeks)}週</td>
-                  <td>{formatNumber(summary.durationRates[40])}%</td>
-                  <td>{formatNumber(summary.durationRates[80])}%</td>
-                  <td>{formatNumber(cancelRate)}%</td>
+                  <td>{formatNumber(summary.averageRanking)}位</td>
+                  <td>{formatNumber(summary.averagePlacement)}位</td>
+                  <td>{summary.bestPlacement} / {summary.worstPlacement}位</td>
+                  <td>{formatNumber(summary.averageWeeklyPlacementChange)}位</td>
+                  <td>{summary.tenPlusPlacementChanges.toLocaleString()}回 ({formatNumber(extremeChangeRate)}%)</td>
+                  <td>{formatNumber(summary.firstPlaceRate)}%</td>
+                  <td>{summary.maxConsecutiveFirstPlaceWeeks}週</td>
+                  <td>{formatNumber(summary.averagePopularityPlacementCorrelation, 3)}</td>
                 </tr>
               );
             })}
+          </tbody>
+        </table>
+      </div>
+      <p className="sim-inline-note">
+        能力と平均掲載順位の相関 (選択条件間): {formatNumber(abilityCorrelation, 3)}
+      </p>
+      <div className="sim-comparison-table-wrap">
+        <table className="sim-comparison-table">
+          <thead>
+            <tr>
+              <th>10週区間</th>
+              {results.map(({ label }) => <th key={label}>{label}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: periodCount }, (_, index) => (
+              <tr key={index}>
+                <th>{index * 10 + 1}〜{Math.min((index + 1) * 10, Math.max(...results.map(({ summary }) => summary.maxWeeks)))}週</th>
+                {results.map(({ label, summary }) => (
+                  <td key={label}>
+                    {summary.placementPeriods[index]
+                      ? `${formatNumber(summary.placementPeriods[index].averagePlacement)}位 (${summary.placementPeriods[index].count})`
+                      : '—'}
+                  </td>
+                ))}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

@@ -96,6 +96,49 @@ describe('developer simulation test runner', () => {
     expect(summary.durationRates[100]).toBeCloseTo(100 / 3);
   });
 
+  it('summarizes placement swings, first-place streaks, periods, and correlations', () => {
+    const settings = createDefaultSimulationSettings(42);
+    settings.maxWeeks = 5;
+    const sample = runSimulationTrial(settings, 42);
+    const summary = summarizeSimulationTrials([
+      {
+        ...sample,
+        placements: [1, 1, 3, 14],
+        averagePlacement: 5,
+        averagePopularity: 10,
+        totalAbility: 110,
+      },
+      {
+        ...sample,
+        placements: [3, 1, 1, 1],
+        averagePlacement: 2,
+        averagePopularity: 20,
+        totalAbility: 120,
+      },
+    ]);
+
+    expect(summary.bestPlacement).toBe(1);
+    expect(summary.worstPlacement).toBe(14);
+    expect(summary.averageWeeklyPlacementChange).toBe(2.5);
+    expect(summary.tenPlusPlacementChanges).toBe(1);
+    expect(summary.placementChangeDistribution).toContainEqual({
+      label: '変動なし',
+      count: 3,
+      percent: 50,
+    });
+    expect(summary.firstPlaceCount).toBe(5);
+    expect(summary.firstPlaceRate).toBeCloseTo(62.5);
+    expect(summary.maxConsecutiveFirstPlaceWeeks).toBe(3);
+    expect(summary.averagePopularityPlacementCorrelation).toBeCloseTo(-1);
+    expect(summary.abilityPlacementCorrelation).toBeCloseTo(-1);
+    expect(summary.placementPeriods[0]).toMatchObject({
+      startWeek: 1,
+      endWeek: 5,
+      count: 2,
+      averagePlacement: 3.125,
+    });
+  });
+
   it.each([100, 1000, 10000])('summarizes %i simulation trials', (count) => {
     const settings = createDefaultSimulationSettings(20261114);
     const trials = Array.from({ length: count }, (_, index) =>

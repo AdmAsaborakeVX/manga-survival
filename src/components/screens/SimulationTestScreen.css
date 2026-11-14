@@ -320,6 +320,23 @@
   gap: 11px;
 }
 
+.sim-change-bands,
+.sim-period-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px 16px;
+  color: #495057;
+  font-size: 0.86rem;
+}
+
+.sim-period-list {
+  margin-top: 14px;
+}
+
+.sim-period-list small {
+  color: #868e96;
+}
+
 .sim-reason-row {
   display: grid;
   grid-template-columns: 90px minmax(80px, 1fr) 150px 100px;

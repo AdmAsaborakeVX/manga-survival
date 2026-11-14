@@ -90,7 +90,10 @@ export function advanceWeek(
   }
 
   // ========== 4. 掲載順位算出 ==========
-  updatePlacementRankings(allMangas);
+  updatePlacementRankings(
+    allMangas,
+    state.seed ^ Math.imul(state.currentWeek, 0x9e3779b9)
+  );
 
   // ========== 5. 売上計算 ==========
   for (const manga of allMangas) {
