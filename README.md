@@ -1,3 +1,6 @@
+# 概要
+能力値確率分布テスト画面追加
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
