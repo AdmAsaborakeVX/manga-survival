@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type {
   MangaConfiguration,
   MangaConfigOptions,
@@ -12,22 +12,33 @@ import './MangaConfigStep.css';
 interface MangaConfigStepProps {
   options: MangaConfigOptions;
   onComplete: (config: MangaConfiguration) => void;
+  initialConfig?: MangaConfiguration | null;
 }
 
 export default function MangaConfigStep({
   options,
   onComplete,
+  initialConfig,
 }: MangaConfigStepProps) {
-  const [config, setConfig] = useState<MangaConfiguration>({
-    genre: 'shounen_action',
-    worldview: 'contemporary',
-    protagonist: 'ordinary_boy',
-    style: 'traditional_shounen',
-    title: '',
-    authorName: '',
-  });
+  const [config, setConfig] = useState<MangaConfiguration>(() => 
+    initialConfig || {
+      genre: 'shounen_action',
+      worldview: 'contemporary',
+      protagonist: 'ordinary_boy',
+      style: 'traditional_shounen',
+      title: '',
+      authorName: '',
+    }
+  );
 
   const [errors, setErrors] = useState<string[]>([]);
+
+  // initialConfigが更新されたときに設定を復元
+  useEffect(() => {
+    if (initialConfig) {
+      setConfig(initialConfig);
+    }
+  }, [initialConfig]);
 
   const handleSubmit = () => {
     const newErrors: string[] = [];

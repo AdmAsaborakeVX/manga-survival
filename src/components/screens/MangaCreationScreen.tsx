@@ -24,6 +24,8 @@ export default function MangaCreationScreen({
 }: MangaCreationScreenProps) {
   const [step, setStep] = useState<CreationStep>('config');
   const [mangaRecord, setMangaRecord] = useState<MangaRecord | null>(null);
+  const [initialConfig, setInitialConfig] = useState<MangaConfiguration | null>(null);
+  const [hasCreatedManga, setHasCreatedManga] = useState(false);
 
   useEffect(() => {
     scrollToTop();
@@ -35,9 +37,24 @@ export default function MangaCreationScreen({
   }, [step]);
 
   const handleConfigComplete = (newConfig: MangaConfiguration) => {
-    const rng = new SeededRandom(generateRandomSeed());
-    const manga = createManga(newConfig, rng);
+    // 最初の1回のみMangaRecordを生成
+    let manga: MangaRecord;
+    
+    if (!hasCreatedManga) {
+      const rng = new SeededRandom(generateRandomSeed());
+      manga = createManga(newConfig, rng);
+      setHasCreatedManga(true);
+    } else {
+      // 2回目以降は設定を更新するのみ
+      if (!mangaRecord) return;
+      manga = {
+        ...mangaRecord,
+        configuration: newConfig,
+      };
+    }
+    
     setMangaRecord(manga);
+    setInitialConfig(newConfig);
     setStep('ability');
   };
 
@@ -82,6 +99,7 @@ export default function MangaCreationScreen({
           <MangaConfigStep
             options={MANGA_CONFIG_OPTIONS}
             onComplete={handleConfigComplete}
+            initialConfig={initialConfig}
           />
         )}
 
