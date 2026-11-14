@@ -58,7 +58,7 @@ function getPopularityTrend(manga: SerializingManga, weeks: number = 4): number 
  * 
  * 最終的な危険度は 0～1 の範囲
  */
-export function updateCancellationRisk(manga: SerializingManga): void {
+export function updateCancellationRisk(manga: SerializingManga, totalMangas = 6): void {
   const weekNumber = manga.popularityHistory.length;
 
   // 1週目は危険度を計算しない
@@ -70,7 +70,6 @@ export function updateCancellationRisk(manga: SerializingManga): void {
   // ========== コンポーネント1: 順位スコア ==========
   const recentAvgRanking = calculateAverageRanking(manga, 4);
   // 順位6位が「平均的」、15位以上で「危険」
-  const totalMangas = 6; // プレイヤー + ライバル5
   const rankingScore = Math.min(1, Math.max(0, (recentAvgRanking - 2) / (totalMangas + 4)));
 
   // ========== コンポーネント2: 人気スコア ==========
@@ -253,10 +252,11 @@ export function shouldComplete(manga: SerializingManga): boolean {
 export function checkEndCondition(
   manga: SerializingManga,
   currentWeek: number,
-  rng: SeededRandom
+  rng: SeededRandom,
+  maxWeeks: number = GAME_CONFIG.maxSerializationWeeks
 ): 'cancelled' | 'completed' | null {
   // 最大連載期間に到達
-  if (currentWeek >= GAME_CONFIG.maxSerializationWeeks) {
+  if (currentWeek >= maxWeeks) {
     return 'completed';
   }
 

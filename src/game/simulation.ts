@@ -5,7 +5,7 @@ import { calculateRankings, updatePlacementRankings } from '@/game/ranking';
 import { updateSales } from '@/game/sales';
 import { checkEndCondition, updateCancellationRisk } from '@/game/endCondition';
 import { generateWeeklyEvents, applyEventEffects, EVENT_DEFINITIONS } from '@/game/events';
-import { POPULARITY_CONFIG } from '@/game/config';
+import { GAME_CONFIG, POPULARITY_CONFIG } from '@/game/config';
 
 /**
  * 毎週の進行処理
@@ -22,7 +22,10 @@ import { POPULARITY_CONFIG } from '@/game/config';
  * 
  * 戻り値：更新された連載状態
  */
-export function advanceWeek(state: SerializationState): SerializationState {
+export function advanceWeek(
+  state: SerializationState,
+  maxWeeks: number = GAME_CONFIG.maxSerializationWeeks
+): SerializationState {
   // 既に終了している場合は何もしない
   if (!state.isActive) {
     return state;
@@ -96,11 +99,11 @@ export function advanceWeek(state: SerializationState): SerializationState {
 
   // ========== 6. 打ち切り危険度更新 ==========
   for (const manga of allMangas) {
-    updateCancellationRisk(manga);
+    updateCancellationRisk(manga, allMangas.length);
   }
 
   // ========== 7. 連載終了判定（プレイヤー作品のみ） ==========
-  const endCondition = checkEndCondition(state.playerManga, state.currentWeek, rng);
+  const endCondition = checkEndCondition(state.playerManga, state.currentWeek, rng, maxWeeks);
 
   if (endCondition) {
     state.isActive = false;
@@ -130,11 +133,14 @@ export function advanceWeeks(state: SerializationState, weeks: number): Serializ
 /**
  * 連載を最後まで進行
  */
-export function simulateToEnd(state: SerializationState): SerializationState {
+export function simulateToEnd(
+  state: SerializationState,
+  maxWeeks: number = GAME_CONFIG.maxSerializationWeeks
+): SerializationState {
   let current = state;
 
   while (current.isActive) {
-    current = advanceWeek(current);
+    current = advanceWeek(current, maxWeeks);
   }
 
   return current;

@@ -35,6 +35,19 @@ http://localhost:5173/?dev=ability-test
   - `generateEditorAbility()`
 - ゲームセーブデータや進行状況に影響を与えない独立した画面
 
+### 連載シミュレーション分析画面
+
+現在の連載ロジックを使って、作品能力・漫画家/編集者能力・作品設定ごとの連載結果を集計します。
+
+**アクセス方法:**
+```
+http://localhost:5173/?dev=simulation-test
+```
+
+100回・1,000回・10,000回または任意回数で実行でき、シード値、ライバル数、最大週数、各能力のランダム/固定値を指定できます。連載期間、終了理由、人気・順位・売上を集計し、分布・週次推移グラフを表示します。用意された総合能力/特化型の条件を複数選んで比較することもできます。
+
+この画面ではゲームセーブデータと作品図鑑を読み書きせず、ゲーム側の `createManga`、`initializeSerializationState`、`advanceWeek` を再利用します。
+
 ## React Compiler
 
 The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).

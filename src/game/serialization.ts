@@ -151,10 +151,10 @@ function generateRivalManga(index: number, rng: SeededRandom): SerializingManga 
 /**
  * ライバル作品群を生成
  */
-function generateRivalMangas(rng: SeededRandom): SerializingManga[] {
+function generateRivalMangas(rng: SeededRandom, rivalCount: number): SerializingManga[] {
   const rivals: SerializingManga[] = [];
 
-  for (let i = 0; i < RIVAL_CONFIG.COUNT; i++) {
+  for (let i = 0; i < rivalCount; i++) {
     rivals.push(generateRivalManga(i, rng));
   }
 
@@ -166,7 +166,8 @@ function generateRivalMangas(rng: SeededRandom): SerializingManga[] {
  */
 export function initializeSerializationState(
   playerManga: MangaRecord,
-  seed: number
+  seed: number,
+  rivalCount: number = RIVAL_CONFIG.COUNT
 ): SerializationState {
   const rng = new SeededRandom(seed);
 
@@ -174,7 +175,7 @@ export function initializeSerializationState(
     id: `serialization_${Date.now()}`,
     playerMangaId: playerManga.id,
     playerManga: initializePlayerManga(playerManga, rng),
-    rivalMangas: generateRivalMangas(rng),
+    rivalMangas: generateRivalMangas(rng, rivalCount),
 
     currentWeek: 0,
     isActive: true,

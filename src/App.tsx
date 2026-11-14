@@ -10,6 +10,7 @@ import SerializationConfirmationScreen from './components/screens/SerializationC
 import SerializationScreen from './components/screens/SerializationScreen';
 import SerializationResultScreen from './components/screens/SerializationResultScreen';
 import AbilityDistributionTestScreen from './components/screens/AbilityDistributionTestScreen';
+import SimulationTestScreen from './components/screens/SimulationTestScreen';
 import './App.css';
 
 function App() {
@@ -17,18 +18,20 @@ function App() {
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [selectedManga, setSelectedManga] = useState<MangaRecord | null>(null);
   const [serializationState, setSerializationState] = useState<SerializationState | null>(null);
-  const [isDeveloperMode] = useState(() => {
-    // URL に ?dev=ability-test があればテスト画面を表示
+  const [developerScreen] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('dev') === 'ability-test';
+    return params.get('dev');
   });
 
   // 初期化をメモ化して不要な再実行を防ぐ
   const initializationResult = useMemo(() => {
+    if (developerScreen) {
+      return { data: null, savedSerialization: null };
+    }
     const data = restoreGameSession();
     const savedSerialization = loadSerializationState();
     return { data, savedSerialization };
-  }, []);
+  }, [developerScreen]);
 
   useEffect(() => {
     const { data, savedSerialization } = initializationResult;
@@ -87,11 +90,19 @@ function App() {
     setSelectedManga(null);
   }, []);
 
+  if (developerScreen === 'simulation-test') {
+    return (
+      <div className="app">
+        <SimulationTestScreen />
+      </div>
+    );
+  }
+
   if (!gameData) {
     return <div className="loading">Loading...</div>;
   }
 
-  if (isDeveloperMode) {
+  if (developerScreen === 'ability-test') {
     return (
       <div className="app">
         <AbilityDistributionTestScreen />
