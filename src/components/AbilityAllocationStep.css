@@ -60,24 +60,30 @@
   display: inline-block;
 }
 
+.ability-rating.lack {
+  background: #475569;
+  color: white;
+}
+
 .ability-rating.common {
-  background: #4ade80;
+  background: #15803d;
   color: white;
 }
 
 .ability-rating.rare {
-  background: #60a5fa;
+  background: #1d4ed8;
   color: white;
 }
 
 .ability-rating.epic {
-  background: #a78bfa;
+  background: #7c3aed;
   color: white;
 }
 
 .ability-rating.legendary {
-  background: #fbbf24;
-  color: #333;
+  background: linear-gradient(135deg, #c2410c 0%, #9a3412 100%);
+  color: white;
+  box-shadow: 0 0 12px rgba(194, 65, 12, 0.4);
 }
 
 .ability-rating.total-rating {
@@ -85,43 +91,48 @@
 }
 
 .ability-rating.total-rating.poor {
-  background: #d4d4d8;
-  color: #333;
+  background: #737373;
+  color: white;
+}
+
+.ability-rating.total-rating.low {
+  background: #854d0e;
+  color: white;
 }
 
 .ability-rating.total-rating.standard {
-  background: #7c7c7c;
+  background: #0f766e;
   color: white;
 }
 
 .ability-rating.total-rating.good {
-  background: #4f46e5;
+  background: #0369a1;
   color: white;
 }
 
 .ability-rating.total-rating.high {
-  background: #7c3aed;
+  background: #4338ca;
   color: white;
 }
 
 .ability-rating.total-rating.superior {
-  background: #db2777;
+  background: #be185d;
   color: white;
 }
 
 .ability-rating.total-rating.top {
-  background: #ea580c;
+  background: #b91c1c;
   color: white;
 }
 
 .ability-rating.total-rating.supreme {
-  background: #ca8a04;
+  background: #7e22ce;
   color: white;
 }
 
 .ability-rating.total-rating.legend {
-  background: #fbbf24;
-  color: #333;
+  background: #a16207;
+  color: white;
   font-weight: 700;
 }
 

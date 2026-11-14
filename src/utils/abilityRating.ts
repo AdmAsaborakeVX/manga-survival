@@ -1,11 +1,11 @@
-export type AbilityRarity = 'common' | 'rare' | 'epic' | 'legendary';
+export type AbilityRarity = 'lack' | 'common' | 'rare' | 'epic' | 'legendary';
 
 export interface AbilityRating {
   label: string;
   rarity: AbilityRarity;
 }
 
-export type TotalAbilityRarity = 'poor' | 'standard' | 'good' | 'high' | 'superior' | 'top' | 'supreme' | 'legend';
+export type TotalAbilityRarity = 'poor' | 'low' | 'standard' | 'good' | 'high' | 'superior' | 'top' | 'supreme' | 'legend';
 
 export interface TotalAbilityRating {
   label: string;
@@ -28,7 +28,7 @@ export function getAbilityRating(ability: number): AbilityRating {
   if (ability >= 60) {
     return { label: '平均的', rarity: 'common' };
   }
-  return { label: '実力不足', rarity: 'common' };
+  return { label: '実力不足', rarity: 'lack' };
 }
 
 /**
@@ -54,7 +54,7 @@ export function getTotalAbilityRating(totalAbility: number): TotalAbilityRating 
     return { label: '平均的', rarity: 'standard' };
   }
   if (totalAbility >= 110) {
-    return { label: 'やや低め', rarity: 'standard' };
+    return { label: '低め', rarity: 'low' };
   }
-  return { label: '低水準', rarity: 'poor' };
+  return { label: '悪い', rarity: 'poor' };
 }

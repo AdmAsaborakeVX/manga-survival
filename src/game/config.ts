@@ -125,7 +125,8 @@ export const GAME_CONFIG: GameConfig = {
   mangaAbilityMaxPerAbility: 100,
   
   // 連載シミュレーション
-  maxSerializationWeeks: 100,
+  // 最大連載週数、最低生存人気、ライバル作品の数などの設定
+  maxSerializationWeeks: 200,
   minPopularityToSurvive: 10,
   rivalCount: 5,
 };
