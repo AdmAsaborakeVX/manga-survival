@@ -53,6 +53,9 @@ export function advanceWeek(state: SerializationState): SerializationState {
         // イベント効果を適用
         applyEventEffects(manga, definition, event);
 
+        // イベント効果後の人気値をクリップ
+        manga.currentPopularity = clampPopularity(manga.currentPopularity);
+
         // イベント履歴に記録
         manga.eventHistory.push({
           week: state.currentWeek,

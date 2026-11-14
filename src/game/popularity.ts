@@ -116,8 +116,8 @@ export function updateMangaPopularity(
   // 新しい人気値を計算
   const newPopularity = clampPopularity(manga.currentPopularity + change);
 
-  // 履歴に保存
-  manga.popularityHistory.push(manga.currentPopularity);
+  // 履歴に保存（クリップした現在値を記録）
+  manga.popularityHistory.push(clampPopularity(manga.currentPopularity));
 
   // 現在値を更新
   manga.currentPopularity = newPopularity;

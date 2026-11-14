@@ -9,6 +9,7 @@ import MangaCreationScreen from './components/screens/MangaCreationScreen';
 import SerializationConfirmationScreen from './components/screens/SerializationConfirmationScreen';
 import SerializationScreen from './components/screens/SerializationScreen';
 import SerializationResultScreen from './components/screens/SerializationResultScreen';
+import AbilityDistributionTestScreen from './components/screens/AbilityDistributionTestScreen';
 import './App.css';
 
 function App() {
@@ -16,6 +17,11 @@ function App() {
   const [gameData, setGameData] = useState<GameData | null>(null);
   const [selectedManga, setSelectedManga] = useState<MangaRecord | null>(null);
   const [serializationState, setSerializationState] = useState<SerializationState | null>(null);
+  const [isDeveloperMode] = useState(() => {
+    // URL に ?dev=ability-test があればテスト画面を表示
+    const params = new URLSearchParams(window.location.search);
+    return params.get('dev') === 'ability-test';
+  });
 
   // 初期化をメモ化して不要な再実行を防ぐ
   const initializationResult = useMemo(() => {
@@ -83,6 +89,14 @@ function App() {
 
   if (!gameData) {
     return <div className="loading">Loading...</div>;
+  }
+
+  if (isDeveloperMode) {
+    return (
+      <div className="app">
+        <AbilityDistributionTestScreen />
+      </div>
+    );
   }
 
   return (

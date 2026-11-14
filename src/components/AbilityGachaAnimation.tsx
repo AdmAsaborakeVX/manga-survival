@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { scrollToTop } from '@/utils/scrollToTop';
 import './AbilityGachaAnimation.css';
 
@@ -47,11 +47,15 @@ export default function AbilityGachaAnimation({
   const [displayTotal, setDisplayTotal] = useState<number | string>('？？？');
   const [mangakaSequence, setMangakaSequence] = useState<number[]>([]);
   const [editorSequence, setEditorSequence] = useState<number[]>([]);
+  const [isSkipped, setIsSkipped] = useState(false);
+  const skipRequestedRef = useRef(false);
 
   const mangakaRating = getAbilityRating(mangakaAbility);
   const editorRating = getAbilityRating(editorAbility);
 
   const handleSkip = () => {
+    skipRequestedRef.current = true;
+    setIsSkipped(true);
     setDisplayMangaka(mangakaAbility);
     setDisplayEditor(editorAbility);
     setDisplayTotal(totalAbility);
@@ -77,6 +81,11 @@ export default function AbilityGachaAnimation({
     const frameDuration = animationDuration / frameCount;
 
     const interval = setInterval(() => {
+      if (skipRequestedRef.current) {
+        clearInterval(interval);
+        return;
+      }
+      
       if (animationFrame < frameCount) {
         setDisplayMangaka(mangakaSequence[animationFrame]);
         animationFrame++;
@@ -100,6 +109,11 @@ export default function AbilityGachaAnimation({
     const frameDuration = animationDuration / frameCount;
 
     const interval = setInterval(() => {
+      if (skipRequestedRef.current) {
+        clearInterval(interval);
+        return;
+      }
+      
       if (animationFrame < frameCount) {
         setDisplayEditor(editorSequence[animationFrame]);
         animationFrame++;
@@ -117,6 +131,12 @@ export default function AbilityGachaAnimation({
   useEffect(() => {
     if (step !== 'total') return;
 
+    if (skipRequestedRef.current) {
+      setDisplayTotal(totalAbility);
+      setStep('complete');
+      return;
+    }
+
     const timer = setTimeout(() => {
       setDisplayTotal(totalAbility);
       setStep('complete');
@@ -131,11 +151,11 @@ export default function AbilityGachaAnimation({
       const timer = setTimeout(() => {
         scrollToTop();
         onAnimationComplete();
-      }, 1500); // 完了演出後
+      }, isSkipped ? 100 : 1500); // スキップ時は短い遅延
 
       return () => clearTimeout(timer);
     }
-  }, [step, onAnimationComplete]);
+  }, [step, isSkipped, onAnimationComplete]);
 
   return (
     <div className="ability-gacha-animation">
@@ -205,12 +225,6 @@ export default function AbilityGachaAnimation({
           </div>
         )}
 
-        {/* スキップボタン */}
-        {step !== 'complete' && (
-          <button className="skip-button" onClick={handleSkip}>
-            スキップ
-          </button>
-        )}
       </div>
     </div>
   );
