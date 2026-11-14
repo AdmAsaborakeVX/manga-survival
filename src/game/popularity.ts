@@ -44,11 +44,11 @@ export function calculateExplosiveness(totalAbility: number, rng: SeededRandom):
  * 毎週の人気変動を計算
  *
  * 計算式の考え方：
- * - 基本は前週の人気から小幅変動
- * - 安定性が高いと変動が小さくなる
- * - 爆発力が高いと大きな変動の可能性がある
- * - 連載が長くなるにつれて人気は緩やかに減衰する傾向
- * - ランダム要素の強さは爆発力に影響を受ける
+ * - 前週の人気を強く継続（70%）し、微小な変動を加える
+ * - 基線（能力に基づいた基本人気）への緩い復帰（15%）
+ * - ランダムイベント的な変動（10%）
+ * - 人気が高い作品は高い水準を維持しやすい
+ * - 人気が低い作品は低迷しやすい（ただし完全ではない）
  */
 export function calculatePopularityChange(
   manga: SerializingManga,
@@ -57,40 +57,68 @@ export function calculatePopularityChange(
 ): number {
   const currentPopularity = manga.currentPopularity;
   const ability = manga.totalAbility;
-  const stability = manga.stability;
-  const explosiveness = manga.explosiveness;
+  const stability = Math.max(0.1, Math.min(1.0, manga.stability));
+  const explosiveness = Math.max(0.5, Math.min(3.0, manga.explosiveness));
 
-  // ========== 基本変動 ==========
-  // 能力値に基づいた期待値へ向かう傾向
+  // ========== 基線を計算 ==========
   const baselinePopularity = calculateBasePopularity(ability);
+
+  // ========== 前週の人気の継続 ==========
+  // これが最も大きな要素で、人気は慣性を持つ
+  // 最初の週は基線値を前週として扱う
+  const previousPopularity = manga.popularityHistory.length > 0 
+    ? manga.popularityHistory[manga.popularityHistory.length - 1] 
+    : baselinePopularity;
+  
+  const momentumTerm = (previousPopularity - currentPopularity) * 0.7;
+
+  // ========== 基線への緩い復帰 ==========
+  // 能力値に基づいた期待値へ向かう傾向（ゆっくり）
   const popDifference = baselinePopularity - currentPopularity;
-  const regressionTerm = popDifference * POPULARITY_CONFIG.MOMENTUM_FACTOR * 0.1;
+  const regressionTerm = popDifference * 0.15;
 
-  // ========== 安定性による調整 ==========
-  // 安定性が高いと前週の人気を継続しやすい
-  const momentumTerm = (manga.popularityHistory.length > 0 ? manga.popularityHistory[manga.popularityHistory.length - 1] - currentPopularity : 0) * POPULARITY_CONFIG.MOMENTUM_FACTOR;
-
-  // ========== ランダム変動 ==========
-  // 爆発力の高さがランダム変動の幅を決める
+  // ========== ランダム変動（イベント的）==========
+  // 爆発力と安定性で幅を決める
   const randomBase = rng.nextFloat(-1, 1);
-  const randomTerm = randomBase * (explosiveness * POPULARITY_CONFIG.BASE_CHANGE_RATE * 10);
+  
+  // ランダム項は爆発力で決まり、安定性で抑制される
+  const maxRandomChange = explosiveness * 2.0;
+  const randomTerm = randomBase * maxRandomChange * (1 - stability * 0.7);
 
-  // 安定性が高いほど、ランダム変動を抑制
-  const stabilityDamper = Math.pow(stability, 2);
-  const dampedRandomTerm = randomTerm * (1 - stabilityDamper * 0.6);
+  // ========== ライバルからの競争圧力 ==========
+  // ライバルが強いと相対順位が下がる傾向（弱い効果）
+  let competitionPressure = 0;
+  if (rivalPopularities.length > 0) {
+    const avgRivalPopularity = rivalPopularities.reduce((a, b) => a + b, 0) / rivalPopularities.length;
+    competitionPressure = (avgRivalPopularity - currentPopularity) * 0.01;
+  }
 
-  // ========== ライバルからの圧力 ==========
-  // 周囲のライバルの人気が高いと、相対的に下がりやすくなる
-  const avgRivalPopularity = rivalPopularities.length > 0 ? rivalPopularities.reduce((a, b) => a + b, 0) / rivalPopularities.length : 50;
-  const competitionPressure = (avgRivalPopularity - currentPopularity) * 0.02;
-
-  // ========== 連載期間による減衰 ==========
-  // 連載が長くなるにつれて、新規性が失われ、人気が緩やかに減衰する傾向
+  // ========== 連載継続による長期減衰 ==========
+  // 連載が長くなると新規性が失われ、緩やかに人気が減衰（20週以上で発動）
   const weekNumber = manga.popularityHistory.length;
-  const progressMalus = Math.pow(POPULARITY_CONFIG.SERIES_PROGRESS_MALUS, Math.max(0, weekNumber - 20)) - 1;
+  let progressMalus = 0;
+  if (weekNumber >= 20) {
+    progressMalus = Math.pow(0.995, weekNumber - 20) - 1;
+  }
 
   // ========== 総合計算 ==========
-  const totalChange = regressionTerm + momentumTerm + dampedRandomTerm + competitionPressure + progressMalus;
+  let totalChange = momentumTerm + regressionTerm + randomTerm + competitionPressure + progressMalus;
+
+  // NaN チェック（デバッグ用）
+  if (!Number.isFinite(totalChange)) {
+    console.warn('Non-finite popularity change detected:', {
+      totalChange,
+      momentumTerm,
+      regressionTerm,
+      randomTerm,
+      competitionPressure,
+      progressMalus,
+      currentPopularity,
+      previousPopularity,
+      baselinePopularity,
+    });
+    return 0;
+  }
 
   return totalChange;
 }

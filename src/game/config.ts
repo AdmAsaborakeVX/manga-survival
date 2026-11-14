@@ -147,36 +147,35 @@ export const POPULARITY_CONFIG = {
   EXPLOSIVENESS_MIN: 0.5,
   EXPLOSIVENESS_MAX: 2.5,
   
-  // 変動
+  // 変動（旧設定は参照されなくなった）
   BASE_CHANGE_RATE: 0.15,
   MOMENTUM_FACTOR: 0.7,
   STABILITY_FACTOR: 0.5,
-  SERIES_PROGRESS_MALUS: 0.98,
+  SERIES_PROGRESS_MALUS: 0.995,
 };
 
 /** 打ち切り判定の定数 */
 export const CANCELLATION_CONFIG = {
-  // 連続低順位で打ち切り
-  LOW_RANKING_WEEKS_TO_CANCEL: 8,
-  LOW_RANKING_THRESHOLD: 15,
+  // 低順位の定義（順位がこれ以上 = 下位の作品）
+  LOW_RANKING_THRESHOLD: 4,
   
-  // 平均順位での判定
-  AVERAGE_RANKING_TO_CANCEL: 18,
+  // 打ち切り判定用の各種閾値（新しい計算ロジックで使用）
+  // これらは古い計算式では使われなくなった
+  LOW_RANKING_WEEKS_TO_CANCEL: 8,
+  AVERAGE_RANKING_TO_CANCEL: 12,
   AVERAGING_WEEKS: 13,
   
-  // 打ち切りリスクの減衰
+  // 危険度の減衰係数（旧式）
   RISK_DECAY_RATE: 0.85,
-  
-  // リスク増加量
   RISK_INCREASE_PER_LOW_WEEK: 0.15,
 };
 
 /** 完結判定の定数 */
 export const COMPLETION_CONFIG = {
-  MIN_WEEKS_TO_COMPLETE: 60,
-  MIN_AVERAGE_POPULARITY: 60,
-  MIN_AVERAGE_RANKING: 10,
-  MIN_TOTAL_SALES: 1000000,
+  MIN_WEEKS_TO_COMPLETE: 40,  // 最小40週で完結の可能性
+  MIN_AVERAGE_POPULARITY: 50,  // 平均人気50以上
+  MIN_AVERAGE_RANKING: 8,      // 平均順位8以上（上位8位）
+  MIN_TOTAL_SALES: 800000,     // 売上800万以上
 };
 
 /** 売上計算の定数 */

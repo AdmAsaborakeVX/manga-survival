@@ -4,27 +4,130 @@ import { calculateAverageRanking, countConsecutiveLowRankings } from '@/game/ran
 import { SeededRandom } from '@/utils/seededRandom';
 
 /**
- * 打ち切り危険度を更新
+ * 直近N週の平均人気を計算
+ */
+function getAveragePopularityRecent(manga: SerializingManga, weeks: number): number {
+  if (manga.popularityHistory.length === 0) {
+    return manga.currentPopularity;
+  }
+
+  const recentWeeks = manga.popularityHistory.slice(-weeks);
+  const sum = recentWeeks.reduce((a, b) => a + b, 0);
+  return sum / recentWeeks.length;
+}
+
+/**
+ * 人気の下降トレンドを計算（-1～1）
+ * 負の値：下降トレンド
+ * 正の値：上昇トレンド
+ */
+function getPopularityTrend(manga: SerializingManga, weeks: number = 4): number {
+  if (manga.popularityHistory.length < weeks) {
+    return 0;
+  }
+
+  const recent = manga.popularityHistory.slice(-weeks);
+  
+  // 線形回帰で傾きを推定（簡易版）
+  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+  for (let i = 0; i < recent.length; i++) {
+    const x = i;
+    const y = recent[i];
+    sumX += x;
+    sumY += y;
+    sumXY += x * y;
+    sumX2 += x * x;
+  }
+
+  const n = recent.length;
+  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  
+  // 傾きを正規化（-1～1の範囲に）
+  return Math.max(-1, Math.min(1, slope / 20));
+}
+
+/**
+ * 打ち切り危険度を更新（新しい計算式）
+ * 
+ * 危険度は以下の要素から計算される：
+ * 1. 直近4週の平均順位（低いほど危険）
+ * 2. 直近4週の平均人気（低いほど危険）
+ * 3. 人気の下降トレンド（下降しているほど危険）
+ * 4. 連続低順位の期間（長いほど危険）
+ * 5. 連載期間による回復の可能性（長期連載は危険度を下げやすくする余地）
+ * 
+ * 最終的な危険度は 0～1 の範囲
  */
 export function updateCancellationRisk(manga: SerializingManga): void {
-  // リスクの自然減衰
-  manga.cancellationRisk *= CANCELLATION_CONFIG.RISK_DECAY_RATE;
+  const weekNumber = manga.popularityHistory.length;
 
-  // 低順位が続いている場合、リスク上昇
+  // 1週目は危険度を計算しない
+  if (weekNumber < 2) {
+    manga.cancellationRisk = 0;
+    return;
+  }
+
+  // ========== コンポーネント1: 順位スコア ==========
+  const recentAvgRanking = calculateAverageRanking(manga, 4);
+  // 順位6位が「平均的」、15位以上で「危険」
+  const totalMangas = 6; // プレイヤー + ライバル5
+  const rankingScore = Math.min(1, Math.max(0, (recentAvgRanking - 2) / (totalMangas + 4)));
+
+  // ========== コンポーネント2: 人気スコア ==========
+  const recentAvgPopularity = getAveragePopularityRecent(manga, 4);
+  // 人気40以上は「安全」、20以下で「危険」
+  const popularityScore = Math.min(1, Math.max(0, (40 - recentAvgPopularity) / 30));
+
+  // ========== コンポーネント3: トレンドスコア ==========
+  const trend = getPopularityTrend(manga, 4);
+  // 下降トレンドで危険度上昇
+  const trendScore = Math.max(0, -trend);
+
+  // ========== コンポーネント4: 連続低順位スコア ==========
   const consecutiveLowRankings = countConsecutiveLowRankings(
     manga,
     CANCELLATION_CONFIG.LOW_RANKING_THRESHOLD
   );
+  // 8週以上で最大危険度に（段階的）
+  const lowRankingScore = Math.min(1, consecutiveLowRankings / 8);
 
-  if (consecutiveLowRankings > 0) {
-    manga.lowRankingWeeks = consecutiveLowRankings;
-    manga.cancellationRisk += consecutiveLowRankings * CANCELLATION_CONFIG.RISK_INCREASE_PER_LOW_WEEK;
-  } else {
-    manga.lowRankingWeeks = 0;
+  // ========== 各コンポーネントの重み付け合成 ==========
+  // 順位と人気が主要、トレンドが二次的
+  const currentRiskScore = 
+    rankingScore * 0.35 +
+    popularityScore * 0.35 +
+    trendScore * 0.15 +
+    lowRankingScore * 0.15;
+
+  // ========== 前週危険度の減衰と現週スコアの合成 ==========
+  // 前週危険度は50%残存、現週スコアは50%の重み
+  // これにより、短期的な悪化でも危険度が上昇しやすくなる
+  const decayFactor = 0.5;
+  const newScore = 0.5;
+  
+  manga.cancellationRisk = 
+    manga.cancellationRisk * decayFactor + 
+    currentRiskScore * newScore;
+
+  // ========== 期待度による補正 ==========
+  // 編集部期待度が高いと危険度を低下させやすくする
+  const expectationBonus = Math.max(0, manga.editorExpectation - 0.5) * 0.2;
+  manga.cancellationRisk = Math.max(0, manga.cancellationRisk - expectationBonus);
+
+  // ========== 売上による補正 ==========
+  // 単行本売上が好調だと危険度を低下
+  const salesPerVolume = manga.totalSales / Math.max(1, Math.floor(weekNumber / 8));
+  if (salesPerVolume > 80000) {
+    manga.cancellationRisk *= 0.8;
+  } else if (salesPerVolume > 60000) {
+    manga.cancellationRisk *= 0.85;
   }
 
-  // リスク値を0～1に正規化
+  // ========== 正規化 ==========
   manga.cancellationRisk = Math.max(0, Math.min(1, manga.cancellationRisk));
+
+  // ========== 低順位週数の更新 ==========
+  manga.lowRankingWeeks = consecutiveLowRankings;
 }
 
 /**
@@ -32,24 +135,60 @@ export function updateCancellationRisk(manga: SerializingManga): void {
  * 複数の条件を総合的に判定する
  */
 export function shouldBeCancelled(manga: SerializingManga): boolean {
-  // 連載開始から1週目は打ち切りにならない
-  if (manga.popularityHistory.length < 2) {
+  const weekNumber = manga.popularityHistory.length;
+
+  // 1週目は打ち切りにならない
+  if (weekNumber < 2) {
     return false;
   }
 
-  // 条件1: 連続して低順位が続いている
-  if (manga.lowRankingWeeks >= CANCELLATION_CONFIG.LOW_RANKING_WEEKS_TO_CANCEL) {
-    return true;
+  // ========== 条件1: 即座打ち切り（極端に悪い成績が続いている） ==========
+  // 人気 < 5 かつ 順位 > 20 が2週連続
+  if (weekNumber >= 2) {
+    const recentPopularities = manga.popularityHistory.slice(-2);
+    const recentRankings = manga.rankingHistory.slice(-2);
+    
+    if (
+      recentPopularities.every((pop) => pop < 5) &&
+      recentRankings.every((rank) => rank > 20)
+    ) {
+      return true;
+    }
   }
 
-  // 条件2: 平均順位が低い（一定期間）
-  const avgRanking = calculateAverageRanking(manga, CANCELLATION_CONFIG.AVERAGING_WEEKS);
-  if (avgRanking >= CANCELLATION_CONFIG.AVERAGE_RANKING_TO_CANCEL) {
-    return true;
+  // ========== 条件2: 短期打ち切り（危険度が高い状態） ==========
+  // 危険度 > 0.7 が2週連続で低順位
+  if (manga.cancellationRisk > 0.7 && weekNumber >= 3) {
+    // 低順位が2週以上続いている
+    if (manga.lowRankingWeeks >= 2) {
+      return true;
+    }
   }
 
-  // 条件3: 人気が極端に低い状態が続いている
-  if (manga.currentPopularity < GAME_CONFIG.minPopularityToSurvive && manga.lowRankingWeeks >= 4) {
+  // ========== 条件3: 通常打ち切り（中期低迷） ==========
+  // 危険度が0.5を超えており、かつ以下のいずれかを満たす
+  if (manga.cancellationRisk > 0.5) {
+    // 3a. 連続低順位が5週以上
+    if (manga.lowRankingWeeks >= 5) {
+      return true;
+    }
+
+    // 3b. 平均順位が低い状態が10週以上継続
+    const avgRanking = calculateAverageRanking(manga, 10);
+    if (avgRanking >= 5 && weekNumber >= 10) {
+      return true;
+    }
+
+    // 3c. 平均人気が極端に低い
+    const avgPopularity = getAveragePopularityRecent(manga, 6);
+    if (avgPopularity < 20 && weekNumber >= 6) {
+      return true;
+    }
+  }
+
+  // ========== 条件4: 完全に期待を失った状態 ==========
+  // 危険度 > 0.85
+  if (manga.cancellationRisk > 0.85) {
     return true;
   }
 
@@ -66,8 +205,8 @@ export function shouldBeCancelledWithChance(
 ): boolean {
   // 確定的な打ち切り判定
   if (shouldBeCancelled(manga)) {
-    // リスクが高いほど確実に打ち切り
-    // リスク0.5ならば50%の確率で救われる
+    // 危険度が高いほど確実に打ち切り
+    // 危険度0.5なら50%の確率で救われる
     const survivalChance = Math.max(0, 1 - manga.cancellationRisk);
     return rng.next() >= survivalChance;
   }
