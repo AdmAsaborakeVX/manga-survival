@@ -106,4 +106,37 @@ describe('placement ranking', () => {
     expect(new Set(leaderPlacements).size).toBeGreaterThan(1);
     expect(Math.max(...leaderPlacements)).toBeLessThanOrEqual(5);
   });
+
+  it('protects only new player series for seven weeks and fades into the normal EMA rank', () => {
+    const [newSeries, establishedSeries] = createMangas(2);
+    newSeries.isNewSerial = true;
+    newSeries.currentRanking = 15;
+    newSeries.currentPlacementRanking = 15;
+    newSeries.placementEmaScore = -12;
+    newSeries.popularityHistory = [50];
+
+    establishedSeries.isNewSerial = false;
+    establishedSeries.currentRanking = 10;
+    establishedSeries.currentPlacementRanking = 10;
+    establishedSeries.placementEmaScore = -10;
+    establishedSeries.popularityHistory = Array(10).fill(50);
+
+    expect(calculatePlacementRanking(newSeries, [newSeries, establishedSeries])).toBe(1);
+    const legacySeries = { ...newSeries, isNewSerial: undefined };
+    expect(calculatePlacementRanking(legacySeries, [legacySeries, establishedSeries])).toBe(2);
+
+    newSeries.popularityHistory = Array(7).fill(50);
+    const weekSevenPlacement = calculatePlacementRanking(
+      newSeries,
+      [newSeries, establishedSeries]
+    );
+    newSeries.popularityHistory.push(50);
+    const weekEightPlacement = calculatePlacementRanking(
+      newSeries,
+      [newSeries, establishedSeries]
+    );
+
+    expect(weekSevenPlacement).toBe(2);
+    expect(weekEightPlacement).toBe(2);
+  });
 });

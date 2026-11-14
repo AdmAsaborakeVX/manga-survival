@@ -3,6 +3,7 @@ import {
   calculateAveragePlacement,
   calculatePlacementAveragesByPeriod,
   evaluatePopularity,
+  evaluateFinalRating,
   evaluateSerializationDuration,
 } from '@/game/evaluation';
 
@@ -55,6 +56,28 @@ describe('serialization duration evaluation boundaries', () => {
     [150, '長期連載'],
   ] as const)('rates %i weeks as %s', (weeks, expected) => {
     expect(evaluateSerializationDuration(weeks)).toBe(expected);
+  });
+});
+
+describe('final serialization evaluation', () => {
+  it.each([11, 17, 19])('fixes a %i-week cancelled series at the lower tier', (weeks) => {
+    expect(evaluateFinalRating('看板', weeks, 'cancelled')).toBe('下層');
+  });
+
+  it('uses the normal matrix at 20 weeks and for non-cancelled short series', () => {
+    expect(evaluateFinalRating('看板', 20, 'cancelled')).toBe('準看板');
+    expect(evaluateFinalRating('看板', 19, 'completed')).toBe('主力');
+  });
+
+  it('rewards strong long-running work without making duration alone a top rating', () => {
+    expect(evaluateFinalRating('主力', 250, 'completed')).toBe('準看板');
+    expect(evaluateFinalRating('下層', 250, 'cancelled')).toBe('下層');
+    expect(evaluateFinalRating('看板', 100, 'cancelled')).toBe('看板');
+  });
+
+  it('can apply the short-cancellation override even when ranking data is unavailable', () => {
+    expect(evaluateFinalRating(null, 17, 'cancelled')).toBe('下層');
+    expect(evaluateFinalRating(null, 20, 'cancelled')).toBeNull();
   });
 });
 

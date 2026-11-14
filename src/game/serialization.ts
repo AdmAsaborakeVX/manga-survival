@@ -33,6 +33,7 @@ function initializePlayerManga(
     currentRanking: 3,
     currentPlacementRanking: 3,
     rankingHistory: [],
+    isNewSerial: true,
     placementHistory: [],
 
     totalSales: 0,
@@ -134,6 +135,7 @@ function generateRivalManga(index: number, rng: SeededRandom): SerializingManga 
     currentRanking: index + 2,
     currentPlacementRanking: index + 2,
     rankingHistory: [],
+    isNewSerial: false,
     placementHistory: [],
 
     totalSales: 0,

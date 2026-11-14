@@ -52,6 +52,19 @@ function getAveragePopularity(manga: SerializingManga): number {
     recentPopularities.length;
 }
 
+function getSustainedPopularityFactor(manga: SerializingManga): number {
+  const popularityHistory = [...manga.popularityHistory, manga.currentPopularity];
+  const sustainedPopularityRate =
+    popularityHistory.filter(
+      (popularity) => popularity >= SALES_CONFIG.SUSTAINED_POPULARITY_THRESHOLD
+    ).length / popularityHistory.length;
+
+  return (
+    SALES_CONFIG.MIN_READER_BASE_PRINT_RUN_FACTOR +
+    sustainedPopularityRate * SALES_CONFIG.SUSTAINED_POPULARITY_PRINT_RUN_FACTOR
+  );
+}
+
 function getPlacementScore(manga: SerializingManga, totalMangas: number): number {
   if (totalMangas <= 1) {
     return 1;
@@ -62,7 +75,7 @@ function getPlacementScore(manga: SerializingManga, totalMangas: number): number
 }
 
 /**
- * 作品能力を主因に、掲載順位・直近人気・小さな乱数で単巻発行部数を補正する
+ * 能力を基準に、掲載順位・直近人気・継続人気・イベント・乱数で単巻発行部数を補正する
  */
 export function calculateVolumePrintRun(
   manga: SerializingManga,
@@ -91,6 +104,7 @@ export function calculateVolumePrintRun(
       calculateBasePrintRun(manga.totalAbility) *
         popularityFactor *
         placementFactor *
+        getSustainedPopularityFactor(manga) *
         eventFactor *
         randomFactor
     )

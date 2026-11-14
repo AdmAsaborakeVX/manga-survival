@@ -7,6 +7,8 @@ import {
 import {
   calculateAveragePlacement,
   calculatePlacementAveragesByPeriod,
+  FINAL_EVALUATION_CONFIG,
+  evaluateFinalRating,
   evaluatePopularity,
   evaluateSerializationDuration,
 } from '@/game/evaluation';
@@ -49,6 +51,14 @@ export default function SerializationResultScreen({
   const averageVolumePrintRun = calculateAveragePrintRunPerVolume(playerManga);
   const popularityEvaluation =
     averagePlacement === null ? null : evaluatePopularity(averageVolumeSales, averagePlacement);
+  const finalRating = evaluateFinalRating(
+    popularityEvaluation,
+    serializationState.currentWeek,
+    serializationState.endReason
+  );
+  const shortCancelledSeries =
+    serializationState.endReason === 'cancelled' &&
+    serializationState.currentWeek < FINAL_EVALUATION_CONFIG.SHORT_CANCELLED_FINAL_RATING_WEEKS;
   const averageVolumeSalesInTenThousands = (averageVolumeSales / 10000).toLocaleString('ja-JP', {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
@@ -116,6 +126,13 @@ export default function SerializationResultScreen({
               <span className="evaluation-card-detail">
                 {serializationState.currentWeek}週
               </span>
+            </div>
+            <div className="evaluation-card">
+              <span className="evaluation-card-title">最終評価</span>
+              <strong className="evaluation-card-value">{finalRating ?? '評価データ不足'}</strong>
+              {shortCancelledSeries && (
+                <small className="evaluation-note">20週未満の打ち切りのため下層評価</small>
+              )}
             </div>
           </div>
 

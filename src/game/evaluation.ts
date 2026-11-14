@@ -1,5 +1,8 @@
+import type { SerializationState } from '@/types';
+
 export type PopularityTier = '下層' | '中堅' | '準看板' | '主力' | '看板';
 export type SerializationDurationRating = '超短期連載' | '短期連載' | '中期連載' | '長期連載';
+type SerializationEndReason = SerializationState['endReason'];
 
 type PlacementBand = 0 | 1 | 2 | 3;
 type SalesBand = 0 | 1 | 2 | 3 | 4;
@@ -11,6 +14,21 @@ const POPULARITY_MATRIX: Record<SalesBand, Record<PlacementBand, PopularityTier>
   3: { 0: '看板', 1: '準看板', 2: '主力', 3: '中堅' },
   4: { 0: '看板', 1: '看板', 2: '準看板', 3: '主力' },
 };
+
+const FINAL_EVALUATION_MATRIX: Record<
+  PopularityTier,
+  Record<SerializationDurationRating, PopularityTier>
+> = {
+  下層: { 超短期連載: '下層', 短期連載: '下層', 中期連載: '下層', 長期連載: '下層' },
+  中堅: { 超短期連載: '下層', 短期連載: '中堅', 中期連載: '中堅', 長期連載: '中堅' },
+  主力: { 超短期連載: '中堅', 短期連載: '主力', 中期連載: '主力', 長期連載: '準看板' },
+  準看板: { 超短期連載: '中堅', 短期連載: '主力', 中期連載: '準看板', 長期連載: '準看板' },
+  看板: { 超短期連載: '主力', 短期連載: '準看板', 中期連載: '看板', 長期連載: '看板' },
+};
+
+export const FINAL_EVALUATION_CONFIG = {
+  SHORT_CANCELLED_FINAL_RATING_WEEKS: 20,
+} as const;
 
 function getSalesBand(sales: number): SalesBand {
   if (sales <= 50000) return 0;
@@ -66,4 +84,23 @@ export function evaluateSerializationDuration(weeks: number): SerializationDurat
   if (weeks < 50) return '短期連載';
   if (weeks < 150) return '中期連載';
   return '長期連載';
+}
+
+export function evaluateFinalRating(
+  popularityRating: PopularityTier | null,
+  weeks: number,
+  endReason: SerializationEndReason
+): PopularityTier | null {
+  if (
+    endReason === 'cancelled' &&
+    weeks < FINAL_EVALUATION_CONFIG.SHORT_CANCELLED_FINAL_RATING_WEEKS
+  ) {
+    return '下層';
+  }
+  if (popularityRating === null) {
+    return null;
+  }
+
+  const durationRating = evaluateSerializationDuration(weeks);
+  return FINAL_EVALUATION_MATRIX[popularityRating][durationRating];
 }

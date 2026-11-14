@@ -60,13 +60,33 @@ function getNextEmaScore(manga: SerializingManga): number {
   );
 }
 
+function getNewSerialProtectionBonus(manga: SerializingManga): number {
+  const weeksSerialized = manga.popularityHistory.length;
+  const protectionWeeks = PLACEMENT_CONFIG.NEW_SERIAL_PROTECTION_WEEKS;
+  if (
+    manga.isNewSerial !== true ||
+    weeksSerialized < 1 ||
+    weeksSerialized > protectionWeeks
+  ) {
+    return 0;
+  }
+
+  const fadeProgress =
+    protectionWeeks === 1
+      ? 1
+      : (protectionWeeks - weeksSerialized) / (protectionWeeks - 1);
+  return PLACEMENT_CONFIG.NEW_SERIAL_PROTECTION_STRENGTH * fadeProgress;
+}
+
 function getPlacementOrder(
   allMangas: SerializingManga[],
   emaScores: Map<string, number>,
   seed?: number
 ): SerializingManga[] {
   const scoredMangas = allMangas.map((manga, index) => {
-    let score = emaScores.get(manga.id) ?? getNextEmaScore(manga);
+    let score =
+      (emaScores.get(manga.id) ?? getNextEmaScore(manga)) +
+      getNewSerialProtectionBonus(manga);
     if (seed !== undefined && score >= -PLACEMENT_CONFIG.TOP_RANK_NOISE_THRESHOLD) {
       const mangaSeed = seed ^ Math.imul(index + 1, 0x9e3779b9);
       const rng = new SeededRandom(mangaSeed);

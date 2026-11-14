@@ -89,6 +89,37 @@ describe('sales and print-run model', () => {
     expect(repeatedMedium).toBe(medium);
   });
 
+  it('bases the print-run audience factor on sustained popularity, not a short-lived peak', () => {
+    const weak = createManga();
+    weak.currentPopularity = 40;
+    weak.popularityHistory = Array(9).fill(40);
+
+    const briefPeak = createManga();
+    briefPeak.currentPopularity = 40;
+    briefPeak.popularityHistory = [100, ...Array(8).fill(40)];
+
+    const sustained = createManga();
+    sustained.currentPopularity = 70;
+    sustained.popularityHistory = Array(9).fill(70);
+    const sustainedLong = {
+      ...sustained,
+      popularityHistory: Array(90).fill(70),
+    };
+
+    const weakRun = calculateVolumePrintRun(weak, 21, new SeededRandom(42));
+    const briefPeakRun = calculateVolumePrintRun(briefPeak, 21, new SeededRandom(42));
+    const sustainedRun = calculateVolumePrintRun(sustained, 21, new SeededRandom(42));
+    const sustainedLongRun = calculateVolumePrintRun(
+      sustainedLong,
+      21,
+      new SeededRandom(42)
+    );
+
+    expect(briefPeakRun).toBeGreaterThan(weakRun);
+    expect(sustainedRun).toBeGreaterThan(briefPeakRun);
+    expect(sustainedLongRun).toBe(sustainedRun);
+  });
+
   it('limits sold copies to the number printed', () => {
     const manga = createManga();
     manga.currentPopularity = 100;

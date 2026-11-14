@@ -40,6 +40,8 @@ describe('Serialization Simulation Engine', () => {
       expect(state.seed).toBe(12345);
       expect(Number.isFinite(state.playerManga.placementEmaScore)).toBe(true);
       expect(state.rivalMangas.every((manga) => Number.isFinite(manga.placementEmaScore))).toBe(true);
+      expect(state.playerManga.isNewSerial).toBe(true);
+      expect(state.rivalMangas.every((manga) => manga.isNewSerial === false)).toBe(true);
     });
 
     it('should generate player and rival mangas', () => {
@@ -130,10 +132,13 @@ describe('Serialization Simulation Engine', () => {
       const restored = JSON.parse(JSON.stringify(state)) as typeof state;
 
       expect(cloned.playerManga.placementEmaScore).toBe(state.playerManga.placementEmaScore);
+      expect(cloned.playerManga.isNewSerial).toBe(true);
       expect(restored.playerManga.placementEmaScore).toBe(state.playerManga.placementEmaScore);
+      expect(restored.playerManga.isNewSerial).toBe(true);
       expect(restored.rivalMangas.map((manga) => manga.placementEmaScore)).toEqual(
         state.rivalMangas.map((manga) => manga.placementEmaScore)
       );
+      expect(restored.rivalMangas.every((manga) => manga.isNewSerial === false)).toBe(true);
     });
 
     it('does not update placement EMA scores after serialization has ended', () => {
