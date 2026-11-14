@@ -1,3 +1,7 @@
+# 概要
+作品評価方法を大きく変更
+売上、掲載順、連載期間で評価
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
