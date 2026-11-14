@@ -50,6 +50,81 @@
   font-weight: 700;
 }
 
+.ability-info-item .ability-rating {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+
+.ability-rating.common {
+  background: #4ade80;
+  color: white;
+}
+
+.ability-rating.rare {
+  background: #60a5fa;
+  color: white;
+}
+
+.ability-rating.epic {
+  background: #a78bfa;
+  color: white;
+}
+
+.ability-rating.legendary {
+  background: #fbbf24;
+  color: #333;
+}
+
+.ability-rating.total-rating {
+  /* 総合能力用の共通スタイル */
+}
+
+.ability-rating.total-rating.poor {
+  background: #d4d4d8;
+  color: #333;
+}
+
+.ability-rating.total-rating.standard {
+  background: #7c7c7c;
+  color: white;
+}
+
+.ability-rating.total-rating.good {
+  background: #4f46e5;
+  color: white;
+}
+
+.ability-rating.total-rating.high {
+  background: #7c3aed;
+  color: white;
+}
+
+.ability-rating.total-rating.superior {
+  background: #db2777;
+  color: white;
+}
+
+.ability-rating.total-rating.top {
+  background: #ea580c;
+  color: white;
+}
+
+.ability-rating.total-rating.supreme {
+  background: #ca8a04;
+  color: white;
+}
+
+.ability-rating.total-rating.legend {
+  background: #fbbf24;
+  color: #333;
+  font-weight: 700;
+}
+
 .allocation-instruction {
   margin: 0;
   color: #666;

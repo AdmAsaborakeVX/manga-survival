@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { scrollToTop } from '@/utils/scrollToTop';
+import { getAbilityRating, getTotalAbilityRating } from '@/utils/abilityRating';
 import './AbilityGachaAnimation.css';
 
 interface AbilityGachaAnimationProps {
@@ -7,25 +8,6 @@ interface AbilityGachaAnimationProps {
   editorAbility: number;
   totalAbility: number;
   onAnimationComplete: () => void;
-}
-
-function getAbilityRating(ability: number): {
-  label: string;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
-} {
-  if (ability >= 90) {
-    return { label: '天才級', rarity: 'legendary' };
-  }
-  if (ability >= 80) {
-    return { label: '逸材', rarity: 'epic' };
-  }
-  if (ability >= 70) {
-    return { label: '有能', rarity: 'rare' };
-  }
-  if (ability >= 60) {
-    return { label: '平均的', rarity: 'common' };
-  }
-  return { label: '実力不足', rarity: 'common' };
 }
 
 function generateAnimationSequence(max: number, count: number): number[] {
@@ -213,7 +195,12 @@ export default function AbilityGachaAnimation({
             </div>
             <div className="slot-label">総合能力</div>
             {typeof displayTotal === 'number' && (
-              <div className="total-glow" />
+              <>
+                <div className={`ability-rating total-rating ${getTotalAbilityRating(displayTotal as number).rarity}`}>
+                  {getTotalAbilityRating(displayTotal as number).label}
+                </div>
+                <div className="total-glow" />
+              </>
             )}
           </div>
         </div>

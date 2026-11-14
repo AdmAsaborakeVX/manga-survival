@@ -203,6 +203,55 @@
   box-shadow: 0 0 12px rgba(249, 115, 22, 0.5);
 }
 
+.ability-rating.total-rating {
+  /* 総合能力用スタイル */
+  padding: 5px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.ability-rating.total-rating.poor {
+  background: #d4d4d8;
+  color: #333;
+}
+
+.ability-rating.total-rating.standard {
+  background: #7c7c7c;
+  color: white;
+}
+
+.ability-rating.total-rating.good {
+  background: #4f46e5;
+  color: white;
+}
+
+.ability-rating.total-rating.high {
+  background: #7c3aed;
+  color: white;
+}
+
+.ability-rating.total-rating.superior {
+  background: #db2777;
+  color: white;
+}
+
+.ability-rating.total-rating.top {
+  background: #ea580c;
+  color: white;
+}
+
+.ability-rating.total-rating.supreme {
+  background: #ca8a04;
+  color: white;
+}
+
+.ability-rating.total-rating.legend {
+  background: linear-gradient(135deg, #fbbf24 0%, #f97316 100%);
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.5);
+}
+
 .plus-sign,
 .equals-sign {
   color: white;

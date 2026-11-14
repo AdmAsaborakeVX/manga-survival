@@ -5,6 +5,7 @@ import {
   updateAbility,
   initializeAbilities,
 } from '@/game/ability';
+import { getAbilityRating, getTotalAbilityRating } from '@/utils/abilityRating';
 import { SeededRandom, generateRandomSeed } from '@/utils/seededRandom';
 import AbilityGachaAnimation from './AbilityGachaAnimation';
 import AbilityCard from './AbilityCard';
@@ -92,14 +93,23 @@ export default function AbilityAllocationStep({
           <div className="ability-info-item">
             <span className="label">漫画家能力</span>
             <span className="value">{initialManga.mangakaAbility}</span>
+            <span className={`ability-rating ${getAbilityRating(initialManga.mangakaAbility).rarity}`}>
+              {getAbilityRating(initialManga.mangakaAbility).label}
+            </span>
           </div>
           <div className="ability-info-item">
             <span className="label">担当編集能力</span>
             <span className="value">{initialManga.editorAbility}</span>
+            <span className={`ability-rating ${getAbilityRating(initialManga.editorAbility).rarity}`}>
+              {getAbilityRating(initialManga.editorAbility).label}
+            </span>
           </div>
           <div className="ability-info-item total">
             <span className="label">総合能力</span>
             <span className="value">{initialManga.totalAbility}</span>
+            <span className={`ability-rating total-rating ${getTotalAbilityRating(initialManga.totalAbility).rarity}`}>
+              {getTotalAbilityRating(initialManga.totalAbility).label}
+            </span>
           </div>
         </div>
         
