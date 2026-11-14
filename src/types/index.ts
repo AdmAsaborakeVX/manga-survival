@@ -46,6 +46,7 @@ export interface MangaRecord {
   totalAbility: number;    // 漫画家能力 + 担当編集能力
   abilities: MangaAbilities;
   createdAt: number;
+  animationShown?: boolean; // 演出表示済みフラグ
 }
 
 // ============================================

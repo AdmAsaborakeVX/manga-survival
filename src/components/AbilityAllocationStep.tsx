@@ -31,7 +31,8 @@ export default function AbilityAllocationStep({
   onBack,
 }: AbilityAllocationStepProps) {
   const [abilities, setAbilities] = useState(initialManga.abilities);
-  const [showAnimation, setShowAnimation] = useState(true);
+  // 演出済みフラグをチェック（初回のみ true、2回目以降は false）
+  const [showAnimation, setShowAnimation] = useState(!initialManga.animationShown);
 
   const remaining = useMemo(
     () => calculateRemainingAbilityPoints(abilities, initialManga.totalAbility),
@@ -59,6 +60,7 @@ export default function AbilityAllocationStep({
     const updatedManga: MangaRecord = {
       ...initialManga,
       abilities,
+      animationShown: true, // 演出表示済みフラグを立てる
     };
     onComplete(updatedManga);
   };
