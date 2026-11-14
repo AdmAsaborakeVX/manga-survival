@@ -107,36 +107,65 @@ describe('placement ranking', () => {
     expect(Math.max(...leaderPlacements)).toBeLessThanOrEqual(5);
   });
 
-  it('protects only new player series for seven weeks and fades into the normal EMA rank', () => {
-    const [newSeries, establishedSeries] = createMangas(2);
+  it('forces ranks one and four through six without regard to the new series score', () => {
+    const mangas = createMangas(21);
+    const newSeries = mangas[0];
     newSeries.isNewSerial = true;
-    newSeries.currentRanking = 15;
-    newSeries.currentPlacementRanking = 15;
-    newSeries.placementEmaScore = -12;
+    newSeries.currentRanking = 21;
+    newSeries.currentPlacementRanking = 21;
+    newSeries.placementEmaScore = -100;
     newSeries.popularityHistory = [50];
 
-    establishedSeries.isNewSerial = false;
-    establishedSeries.currentRanking = 10;
-    establishedSeries.currentPlacementRanking = 10;
-    establishedSeries.placementEmaScore = -10;
-    establishedSeries.popularityHistory = Array(10).fill(50);
+    updatePlacementRankings(mangas, 101);
+    expect(newSeries.currentPlacementRanking).toBe(1);
+    expect(new Set(mangas.map((manga) => manga.currentPlacementRanking)).size).toBe(21);
 
-    expect(calculatePlacementRanking(newSeries, [newSeries, establishedSeries])).toBe(1);
-    const legacySeries = { ...newSeries, isNewSerial: undefined };
-    expect(calculatePlacementRanking(legacySeries, [legacySeries, establishedSeries])).toBe(2);
+    newSeries.popularityHistory = Array(2).fill(50);
+    updatePlacementRankings(mangas, 202);
+    const secondWeekPlacement = newSeries.currentPlacementRanking;
+    expect(secondWeekPlacement).toBeGreaterThanOrEqual(4);
+    expect(secondWeekPlacement).toBeLessThanOrEqual(6);
 
-    newSeries.popularityHistory = Array(7).fill(50);
-    const weekSevenPlacement = calculatePlacementRanking(
-      newSeries,
-      [newSeries, establishedSeries]
-    );
-    newSeries.popularityHistory.push(50);
-    const weekEightPlacement = calculatePlacementRanking(
-      newSeries,
-      [newSeries, establishedSeries]
-    );
+    newSeries.totalAbility = 170;
+    newSeries.currentRanking = 1;
+    newSeries.placementEmaScore = 100;
+    updatePlacementRankings(mangas, 202);
+    expect(newSeries.currentPlacementRanking).toBe(secondWeekPlacement);
+  });
 
-    expect(weekSevenPlacement).toBe(2);
-    expect(weekEightPlacement).toBe(2);
+  it('uses seeded positions from four through fourteen during weeks three to seven', () => {
+    const mangas = createMangas(21);
+    const newSeries = mangas[0];
+    newSeries.isNewSerial = true;
+
+    for (let week = 3; week <= 7; week++) {
+      newSeries.popularityHistory = Array(week).fill(50);
+      const weekSeed = Math.imul(week, 0x9e3779b9);
+      const firstPlacement = calculatePlacementRanking(newSeries, mangas, weekSeed);
+      const repeatedPlacement = calculatePlacementRanking(newSeries, mangas, weekSeed);
+
+      expect(firstPlacement).toBeGreaterThanOrEqual(4);
+      expect(firstPlacement).toBeLessThanOrEqual(14);
+      expect(repeatedPlacement).toBe(firstPlacement);
+    }
+  });
+
+  it('returns to ordinary EMA ranking from week eight onward', () => {
+    const mangas = createMangas(21);
+    const newSeries = mangas[0];
+    newSeries.isNewSerial = true;
+    newSeries.currentRanking = 21;
+    newSeries.popularityHistory = Array(8).fill(50);
+    newSeries.placementEmaScore = -100;
+    mangas.slice(1).forEach((manga, index) => {
+      manga.isNewSerial = false;
+      manga.placementEmaScore = -1;
+      manga.currentRanking = index + 1;
+      manga.popularityHistory = Array(8).fill(50);
+    });
+
+    updatePlacementRankings(mangas, 808);
+
+    expect(newSeries.currentPlacementRanking).toBe(21);
   });
 });
