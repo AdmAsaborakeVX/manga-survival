@@ -67,6 +67,7 @@ export function calculatePlacementRanking(
 export function updatePlacementRankings(allMangas: SerializingManga[]): void {
   allMangas.forEach((manga) => {
     manga.currentPlacementRanking = calculatePlacementRanking(manga, allMangas);
+    manga.placementHistory?.push(manga.currentPlacementRanking);
   });
 }
 

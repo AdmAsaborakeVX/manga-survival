@@ -164,6 +164,9 @@ export function resetSeriazlizationToWeek(state: SerializationState, targetWeek:
   if (targetWeek < manga.popularityHistory.length) {
     manga.popularityHistory = manga.popularityHistory.slice(0, targetWeek);
     manga.rankingHistory = manga.rankingHistory.slice(0, targetWeek);
+    if (manga.placementHistory) {
+      manga.placementHistory = manga.placementHistory.slice(0, targetWeek);
+    }
     manga.eventHistory = manga.eventHistory.filter((e) => e.week < targetWeek);
 
     if (manga.popularityHistory.length > 0) {
@@ -206,6 +209,14 @@ export function validateSerializationState(state: SerializationState): { valid: 
       `Player manga ranking history length mismatch: expected ${expectedHistoryLength}, got ${state.playerManga.rankingHistory.length}`
     );
   }
+  if (
+    state.playerManga.placementHistory &&
+    state.playerManga.placementHistory.length !== expectedHistoryLength
+  ) {
+    errors.push(
+      `Player manga placement history length mismatch: expected ${expectedHistoryLength}, got ${state.playerManga.placementHistory.length}`
+    );
+  }
 
   // ライバル作品の検証
   for (let i = 0; i < state.rivalMangas.length; i++) {
@@ -213,6 +224,11 @@ export function validateSerializationState(state: SerializationState): { valid: 
     if (rival.popularityHistory.length !== expectedHistoryLength) {
       errors.push(
         `Rival ${i} popularity history length mismatch: expected ${expectedHistoryLength}, got ${rival.popularityHistory.length}`
+      );
+    }
+    if (rival.placementHistory && rival.placementHistory.length !== expectedHistoryLength) {
+      errors.push(
+        `Rival ${i} placement history length mismatch: expected ${expectedHistoryLength}, got ${rival.placementHistory.length}`
       );
     }
   }

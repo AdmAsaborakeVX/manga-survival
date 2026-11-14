@@ -32,6 +32,7 @@ function initializePlayerManga(
     currentRanking: 3,
     currentPlacementRanking: 3,
     rankingHistory: [],
+    placementHistory: [],
 
     totalSales: 0,
     lastSalesWeek: 0,
@@ -129,6 +130,7 @@ function generateRivalManga(index: number, rng: SeededRandom): SerializingManga 
     currentRanking: index + 2,
     currentPlacementRanking: index + 2,
     rankingHistory: [],
+    placementHistory: [],
 
     totalSales: 0,
     lastSalesWeek: 0,
@@ -208,6 +210,9 @@ export function cloneSerializationState(state: SerializationState): Serializatio
       abilities: { ...state.playerManga.abilities },
       popularityHistory: [...state.playerManga.popularityHistory],
       rankingHistory: [...state.playerManga.rankingHistory],
+      placementHistory: state.playerManga.placementHistory
+        ? [...state.playerManga.placementHistory]
+        : undefined,
       salesHistory: [...state.playerManga.salesHistory],
       eventHistory: [...state.playerManga.eventHistory],
     },
@@ -216,6 +221,7 @@ export function cloneSerializationState(state: SerializationState): Serializatio
       abilities: { ...rival.abilities },
       popularityHistory: [...rival.popularityHistory],
       rankingHistory: [...rival.rankingHistory],
+      placementHistory: rival.placementHistory ? [...rival.placementHistory] : undefined,
       salesHistory: [...rival.salesHistory],
       eventHistory: [...rival.eventHistory],
     })),

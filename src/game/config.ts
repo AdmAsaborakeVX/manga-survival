@@ -198,7 +198,7 @@ export const EVENT_CONFIG = {
 
 /** ライバル作品生成 */
 export const RIVAL_CONFIG = {
-  COUNT: 5,
+  COUNT: 20,
   ABILITY_CENTER: 130,
   ABILITY_VARIANCE: 25,
   INITIAL_POPULARITY_VARIANCE: 10,

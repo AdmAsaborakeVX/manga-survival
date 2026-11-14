@@ -65,40 +65,59 @@
 }
 
 .evaluation-section {
-  text-align: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
   margin: 25px 0;
 }
 
-.evaluation-badge {
-  display: inline-block;
-  border: 3px solid;
-  border-radius: 50%;
-  width: 120px;
-  height: 120px;
+.evaluation-card {
+  background: #f9f9f9;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 18px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  animation: scalePulse 0.6s ease-out;
-}
-
-@keyframes scalePulse {
-  0% {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.evaluation-label {
-  font-size: 18px;
-  font-weight: 700;
+  gap: 8px;
   text-align: center;
+}
+
+.evaluation-card-title {
+  color: #666;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.evaluation-card-value {
+  color: #667eea;
+  font-size: 23px;
+  font-weight: 700;
+}
+
+.evaluation-card-details {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 12px;
+  color: #666;
+  font-size: 13px;
+  text-align: left;
+}
+
+.evaluation-card-details strong {
+  color: #333;
+  text-align: right;
+}
+
+.evaluation-card-detail {
+  color: #666;
+  font-size: 14px;
+}
+
+.evaluation-note {
+  color: #777;
+  font-size: 12px;
 }
 
 .result-grid {
@@ -214,12 +233,4 @@
     grid-template-columns: 1fr;
   }
 
-  .evaluation-badge {
-    width: 100px;
-    height: 100px;
-  }
-
-  .evaluation-label {
-    font-size: 16px;
-  }
 }

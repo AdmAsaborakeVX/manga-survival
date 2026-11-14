@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SeededRandom, generateRandomSeed } from '@/utils/seededRandom';
 import { createManga } from '@/game/manga';
-import { initializeSerializationState } from '@/game/serialization';
+import { cloneSerializationState, initializeSerializationState } from '@/game/serialization';
 import {
   advanceWeek,
   advanceWeeks,
@@ -107,6 +107,28 @@ describe('Serialization Simulation Engine', () => {
       expect(state.playerManga.currentRanking).toBeLessThanOrEqual(
         GAME_CONFIG.rivalCount + 1
       );
+    });
+
+    it('records each weekly placement separately from survey ranking', () => {
+      let state = initializeSerializationState(mockMangaRecord, 12345);
+
+      state = advanceWeek(state);
+
+      expect(state.playerManga.placementHistory).toEqual([
+        state.playerManga.currentPlacementRanking,
+      ]);
+      expect(state.playerManga.rankingHistory).toEqual([
+        state.playerManga.currentRanking,
+      ]);
+    });
+
+    it('keeps legacy saves without placement history playable without inventing past data', () => {
+      const state = initializeSerializationState(mockMangaRecord, 12345);
+      delete state.playerManga.placementHistory;
+
+      const resumed = advanceWeek(cloneSerializationState(state));
+
+      expect(resumed.playerManga.placementHistory).toBeUndefined();
     });
 
     it('should keep popularity in valid range', () => {

@@ -134,6 +134,8 @@ export interface SerializingManga {
   currentRanking: number;
   currentPlacementRanking: number;
   rankingHistory: number[];
+  /** 週次掲載順位。旧セーブでは未記録の場合がある */
+  placementHistory?: number[];
   
   // 売上
   totalSales: number;
