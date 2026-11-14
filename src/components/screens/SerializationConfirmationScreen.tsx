@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { scrollToTop } from '@/utils/scrollToTop';
+import { getGenreLabel } from '@/utils/configLabels';
 import './SerializationConfirmationScreen.css';
 import type { MangaRecord } from '@/types';
 
@@ -38,7 +39,7 @@ export default function SerializationConfirmationScreen({
             </div>
             <div className="info-row">
               <span className="label">ジャンル:</span>
-              <span className="value">{configuration.genre}</span>
+              <span className="value">{getGenreLabel(configuration.genre)}</span>
             </div>
           </div>
 
