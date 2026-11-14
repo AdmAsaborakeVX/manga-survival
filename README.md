@@ -1,3 +1,6 @@
+# 概要
+新連載補正期間導入
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
