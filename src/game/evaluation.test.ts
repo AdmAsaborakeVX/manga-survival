@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   calculateAveragePlacement,
+  calculatePlacementAveragesByPeriod,
   evaluatePopularity,
   evaluateSerializationDuration,
 } from '@/game/evaluation';
@@ -55,5 +56,19 @@ describe('average placement', () => {
   it('returns the average of recorded placement ranks and null when unavailable', () => {
     expect(calculateAveragePlacement([2, 4, 3])).toBe(3);
     expect(calculateAveragePlacement([])).toBeNull();
+  });
+
+  it('groups weekly placement into ten-week averages and keeps a final partial period', () => {
+    const history = [...Array(10).fill(5), ...Array(10).fill(8), 10, 12, 14];
+
+    expect(calculatePlacementAveragesByPeriod(history)).toEqual([
+      { startWeek: 1, endWeek: 10, averagePlacement: 5 },
+      { startWeek: 11, endWeek: 20, averagePlacement: 8 },
+      { startWeek: 21, endWeek: 23, averagePlacement: 12 },
+    ]);
+  });
+
+  it('returns no periods when placement history is unavailable', () => {
+    expect(calculatePlacementAveragesByPeriod([])).toEqual([]);
   });
 });

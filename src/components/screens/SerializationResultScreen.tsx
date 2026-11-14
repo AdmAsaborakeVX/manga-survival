@@ -1,8 +1,12 @@
 import { useEffect } from 'react';
 import { scrollToTop } from '@/utils/scrollToTop';
-import { calculateAverageSalesPerVolume } from '@/game/sales';
+import {
+  calculateAveragePrintRunPerVolume,
+  calculateAverageSalesPerVolume,
+} from '@/game/sales';
 import {
   calculateAveragePlacement,
+  calculatePlacementAveragesByPeriod,
   evaluatePopularity,
   evaluateSerializationDuration,
 } from '@/game/evaluation';
@@ -24,6 +28,9 @@ export default function SerializationResultScreen({
   const playerManga = serializationState.playerManga;
   const placementHistory = playerManga.placementHistory ?? [];
   const printRunHistory = playerManga.printRunHistory;
+  const hasCompletePlacementHistory =
+    serializationState.currentWeek > 0 &&
+    placementHistory.length === serializationState.currentWeek;
   const cumulativePrintRun =
     printRunHistory &&
     printRunHistory.length === playerManga.salesHistory.length &&
@@ -32,10 +39,14 @@ export default function SerializationResultScreen({
         printRunHistory.reduce<number>((total, copies) => total + (copies ?? 0), 0)
       : null;
   const averagePlacement =
-    placementHistory.length === serializationState.currentWeek
+    hasCompletePlacementHistory
       ? calculateAveragePlacement(placementHistory)
       : null;
+  const placementPeriods = hasCompletePlacementHistory
+    ? calculatePlacementAveragesByPeriod(placementHistory)
+    : [];
   const averageVolumeSales = calculateAverageSalesPerVolume(playerManga);
+  const averageVolumePrintRun = calculateAveragePrintRunPerVolume(playerManga);
   const popularityEvaluation =
     averagePlacement === null ? null : evaluatePopularity(averageVolumeSales, averagePlacement);
   const averageVolumeSalesInTenThousands = (averageVolumeSales / 10000).toLocaleString('ja-JP', {
@@ -155,7 +166,57 @@ export default function SerializationResultScreen({
                 {cumulativePrintRun === null ? '旧巻の履歴なし' : cumulativePrintRun.toLocaleString()}
               </span>
             </div>
+
+            <div className="result-item">
+              <span className="result-label">1巻当たり平均発行部数</span>
+              <span className="result-value">
+                {averageVolumePrintRun === null
+                  ? 'データなし'
+                  : `${Math.round(averageVolumePrintRun).toLocaleString()}部`}
+              </span>
+              {averageVolumePrintRun !== null && printRunHistory?.some((copies) => copies === null) && (
+                <small className="result-item-note">発行部数が記録された巻のみの平均</small>
+              )}
+            </div>
           </div>
+
+          <section className="placement-analysis">
+            <h3>掲載順位推移</h3>
+            {hasCompletePlacementHistory ? (
+              <>
+                <PlacementTrendChart
+                  placementHistory={placementHistory}
+                  maxRank={serializationState.rivalMangas.length + 1}
+                />
+                <div className="placement-table-wrap">
+                  <table className="placement-average-table">
+                    <thead>
+                      <tr>
+                        <th>週</th>
+                        <th>平均掲載順位</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {placementPeriods.map((period) => (
+                        <tr key={period.startWeek}>
+                          <td>
+                            {period.startWeek}～{period.endWeek}週目
+                            {period.endWeek - period.startWeek < 9 &&
+                              `（${period.endWeek - period.startWeek + 1}週）`}
+                          </td>
+                          <td>{period.averagePlacement.toFixed(1)}位</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : (
+              <p className="placement-analysis-note">
+                このセーブには全週分の掲載順位履歴がありません。
+              </p>
+            )}
+          </section>
 
           {playerManga.eventHistory.length > 0 && (
             <div className="events-summary">
@@ -178,6 +239,75 @@ export default function SerializationResultScreen({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function PlacementTrendChart({
+  placementHistory,
+  maxRank,
+}: {
+  placementHistory: number[];
+  maxRank: number;
+}) {
+  const width = 640;
+  const height = 250;
+  const padding = { top: 20, right: 24, bottom: 38, left: 48 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+  const rankLimit = Math.max(1, maxRank);
+  const x = (index: number) =>
+    padding.left + (index / Math.max(1, placementHistory.length - 1)) * chartWidth;
+  const y = (rank: number) =>
+    padding.top +
+    ((Math.min(rankLimit, Math.max(1, rank)) - 1) / Math.max(1, rankLimit - 1)) *
+      chartHeight;
+  const yTicks = [...new Set([1, Math.ceil(rankLimit / 2), rankLimit])];
+
+  return (
+    <div className="placement-chart-scroll">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label="週ごとの掲載順位推移。グラフ上部ほど上位です。"
+      >
+        {yTicks.map((rank) => (
+          <g key={rank}>
+            <line
+              x1={padding.left}
+              x2={width - padding.right}
+              y1={y(rank)}
+              y2={y(rank)}
+              className="placement-grid-line"
+            />
+            <text
+              x={padding.left - 8}
+              y={y(rank) + 4}
+              textAnchor="end"
+              className="placement-axis-label"
+            >
+              {rank}位
+            </text>
+          </g>
+        ))}
+        <polyline
+          fill="none"
+          stroke="#667eea"
+          strokeWidth="2.5"
+          points={placementHistory.map((rank, index) => `${x(index)},${y(rank)}`).join(' ')}
+        />
+        <text x={padding.left} y={height - 10} className="placement-axis-label">
+          1週
+        </text>
+        <text
+          x={width - padding.right}
+          y={height - 10}
+          textAnchor="end"
+          className="placement-axis-label"
+        >
+          {placementHistory.length}週
+        </text>
+      </svg>
     </div>
   );
 }

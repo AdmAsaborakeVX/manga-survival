@@ -175,6 +175,19 @@ export function calculateAverageSalesPerVolume(manga: SerializingManga): number 
 }
 
 /**
+ * 記録されている巻の平均発行部数を返す。旧セーブの不明値は集計しない。
+ */
+export function calculateAveragePrintRunPerVolume(manga: SerializingManga): number | null {
+  const knownPrintRuns = (manga.printRunHistory ?? []).filter(
+    (copies): copies is number => copies !== null
+  );
+  if (knownPrintRuns.length === 0) {
+    return null;
+  }
+  return knownPrintRuns.reduce((total, copies) => total + copies, 0) / knownPrintRuns.length;
+}
+
+/**
  * 売上がどの程度のレベルか を文字列で返す
  */
 export function evaluateSalesLevel(manga: SerializingManga): string {

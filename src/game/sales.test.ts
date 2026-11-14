@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SerializingManga } from '@/types';
 import {
+  calculateAveragePrintRunPerVolume,
   calculateBasePrintRun,
   calculateVolumePrintRun,
   calculateVolumeSales,
@@ -149,5 +150,14 @@ describe('sales and print-run model', () => {
     expect(manga.printRunHistory?.[0]).toBeNull();
     expect(manga.printRunHistory?.[1]).toBeGreaterThan(0);
     expect(manga.totalPrintRun).toBe(manga.printRunHistory?.[1]);
+  });
+
+  it('averages known volume print runs without treating unknown history as zero', () => {
+    const manga = createManga();
+    manga.printRunHistory = [null, 100000, 300000];
+
+    expect(calculateAveragePrintRunPerVolume(manga)).toBe(200000);
+    expect(calculateAveragePrintRunPerVolume({ ...manga, printRunHistory: [null] })).toBeNull();
+    expect(calculateAveragePrintRunPerVolume({ ...manga, printRunHistory: undefined })).toBeNull();
   });
 });

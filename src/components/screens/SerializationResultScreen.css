@@ -152,6 +152,76 @@
   color: #667eea;
 }
 
+.result-item-note {
+  margin-top: 5px;
+  color: #777;
+  font-size: 11px;
+}
+
+.placement-analysis {
+  margin-top: 24px;
+  padding: 18px;
+  background: #f9f9f9;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.placement-analysis h3 {
+  margin: 0 0 14px;
+  color: #333;
+  font-size: 16px;
+}
+
+.placement-chart-scroll {
+  overflow-x: auto;
+}
+
+.placement-chart-scroll svg {
+  display: block;
+  width: 100%;
+  min-width: 420px;
+}
+
+.placement-grid-line {
+  stroke: #e5e7eb;
+  stroke-width: 1;
+}
+
+.placement-axis-label {
+  fill: #687078;
+  font-size: 11px;
+}
+
+.placement-table-wrap {
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.placement-average-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #444;
+  font-size: 13px;
+}
+
+.placement-average-table th,
+.placement-average-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.placement-average-table th:last-child,
+.placement-average-table td:last-child {
+  text-align: right;
+}
+
+.placement-analysis-note {
+  margin: 0;
+  color: #777;
+  font-size: 13px;
+}
+
 .events-summary {
   background: #f9f9f9;
   border-radius: 6px;

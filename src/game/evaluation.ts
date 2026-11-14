@@ -36,6 +36,31 @@ export function calculateAveragePlacement(placementHistory: number[]): number | 
   return placementHistory.reduce((total, rank) => total + rank, 0) / placementHistory.length;
 }
 
+export interface PlacementPeriodAverage {
+  startWeek: number;
+  endWeek: number;
+  averagePlacement: number;
+}
+
+export function calculatePlacementAveragesByPeriod(
+  placementHistory: number[]
+): PlacementPeriodAverage[] {
+  const weeksPerPeriod = 10;
+  const periods: PlacementPeriodAverage[] = [];
+
+  for (let startIndex = 0; startIndex < placementHistory.length; startIndex += weeksPerPeriod) {
+    const period = placementHistory.slice(startIndex, startIndex + weeksPerPeriod);
+    periods.push({
+      startWeek: startIndex + 1,
+      endWeek: startIndex + period.length,
+      averagePlacement:
+        period.reduce((total, rank) => total + rank, 0) / period.length,
+    });
+  }
+
+  return periods;
+}
+
 export function evaluateSerializationDuration(weeks: number): SerializationDurationRating {
   if (weeks < 20) return '超短期連載';
   if (weeks < 50) return '短期連載';
