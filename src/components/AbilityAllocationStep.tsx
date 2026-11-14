@@ -11,6 +11,7 @@ import './AbilityAllocationStep.css';
 interface AbilityAllocationStepProps {
   manga: MangaRecord;
   onComplete: (updatedManga: MangaRecord) => void;
+  onBack?: () => void;
 }
 
 type AbilityKey = keyof MangaAbilities;
@@ -33,6 +34,7 @@ const ABILITY_LABELS: Record<AbilityKey, string> = {
 export default function AbilityAllocationStep({
   manga: initialManga,
   onComplete,
+  onBack,
 }: AbilityAllocationStepProps) {
   const [abilities, setAbilities] = useState(initialManga.abilities);
 
@@ -69,7 +71,23 @@ export default function AbilityAllocationStep({
     <div className="ability-allocation-step">
       <div className="allocation-header">
         <h2>能力を配分する</h2>
-        <p>総合能力: {initialManga.totalAbility} ポイント</p>
+        
+        <div className="creator-abilities-info">
+          <div className="ability-info-item">
+            <span className="label">漫画家能力</span>
+            <span className="value">{initialManga.mangakaAbility}</span>
+          </div>
+          <div className="ability-info-item">
+            <span className="label">担当編集能力</span>
+            <span className="value">{initialManga.editorAbility}</span>
+          </div>
+          <div className="ability-info-item total">
+            <span className="label">総合能力</span>
+            <span className="value">{initialManga.totalAbility}</span>
+          </div>
+        </div>
+        
+        <p className="allocation-instruction">下記から総合能力を配分してください</p>
       </div>
 
       <div className="allocation-container">
@@ -111,6 +129,15 @@ export default function AbilityAllocationStep({
         </div>
 
         <div className="buttons-group">
+          {onBack && (
+            <button
+              className="back-button"
+              onClick={onBack}
+              type="button"
+            >
+              戻る
+            </button>
+          )}
           <button
             className="reset-button"
             onClick={handleReset}

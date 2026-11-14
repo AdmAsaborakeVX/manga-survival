@@ -8,15 +8,52 @@
 }
 
 .allocation-header h2 {
-  margin: 0 0 8px 0;
+  margin: 0 0 16px 0;
   font-size: 1.5rem;
   color: #333;
 }
 
-.allocation-header p {
+.creator-abilities-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.ability-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  text-align: center;
+}
+
+.ability-info-item.total {
+  background: #f0f4ff;
+  border: 1px solid #667eea;
+  font-weight: 600;
+}
+
+.ability-info-item .label {
+  font-size: 0.75rem;
+  color: #999;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.ability-info-item .value {
+  font-size: 1.4rem;
+  color: #333;
+  font-weight: 700;
+}
+
+.allocation-instruction {
   margin: 0;
   color: #666;
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .allocation-container {
@@ -149,6 +186,7 @@
   justify-content: center;
 }
 
+.back-button,
 .reset-button,
 .complete-button {
   padding: 10px 24px;
@@ -160,6 +198,16 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.back-button {
+  border-color: #ddd;
+  color: #666;
+}
+
+.back-button:hover {
+  background: #f5f5f5;
+  border-color: #999;
 }
 
 .reset-button:hover {
@@ -183,6 +231,10 @@
 }
 
 @media (max-width: 600px) {
+  .creator-abilities-info {
+    grid-template-columns: 1fr;
+  }
+
   .ability-item {
     flex-direction: column;
     align-items: flex-start;
@@ -206,3 +258,4 @@
     width: 100%;
   }
 }
+

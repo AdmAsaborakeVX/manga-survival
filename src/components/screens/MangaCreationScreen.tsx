@@ -34,23 +34,31 @@ export default function MangaCreationScreen({
   const handleAbilityComplete = (updatedManga: MangaRecord) => {
     if (!updatedManga) return;
 
-    // updatedMangaを保存
+    // updatedMangaを保存（GameDataには保存しない）
     setMangaRecord(updatedManga);
-
-    const newGameData: GameData = {
-      ...gameData,
-      mangas: [...gameData.mangas, updatedManga],
-      lastUpdated: Date.now(),
-    };
-
-    setGameData(newGameData);
-    saveGameData(newGameData);
-
     setStep('confirmation');
+  };
+
+  const handleBackFromConfirmation = () => {
+    setStep('ability');
+  };
+
+  const handleBackFromAbility = () => {
+    setStep('config');
   };
 
   const handleConfirm = () => {
     if (mangaRecord) {
+      // 確認時にGameDataに保存
+      const newGameData: GameData = {
+        ...gameData,
+        mangas: [...gameData.mangas, mangaRecord],
+        lastUpdated: Date.now(),
+      };
+
+      setGameData(newGameData);
+      saveGameData(newGameData);
+
       onComplete(mangaRecord);
     }
   };
@@ -71,11 +79,16 @@ export default function MangaCreationScreen({
           <AbilityAllocationStep
             manga={mangaRecord}
             onComplete={handleAbilityComplete}
+            onBack={handleBackFromAbility}
           />
         )}
 
         {step === 'confirmation' && mangaRecord && (
-          <ConfirmationStep manga={mangaRecord} onConfirm={handleConfirm} />
+          <ConfirmationStep
+            manga={mangaRecord}
+            onConfirm={handleConfirm}
+            onBack={handleBackFromConfirmation}
+          />
         )}
       </div>
     </div>
@@ -85,9 +98,11 @@ export default function MangaCreationScreen({
 function ConfirmationStep({
   manga,
   onConfirm,
+  onBack,
 }: {
   manga: MangaRecord;
   onConfirm: () => void;
+  onBack?: () => void;
 }) {
   return (
     <div className="confirmation-step">
@@ -144,9 +159,20 @@ function ConfirmationStep({
         </div>
       </div>
 
-      <button className="confirm-button" onClick={onConfirm}>
-        連載を開始する
-      </button>
+      <div className="buttons-group">
+        {onBack && (
+          <button
+            className="back-button"
+            onClick={onBack}
+            type="button"
+          >
+            戻る
+          </button>
+        )}
+        <button className="confirm-button" onClick={onConfirm}>
+          連載を開始する
+        </button>
+      </div>
     </div>
   );
 }
