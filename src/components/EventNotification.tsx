@@ -42,11 +42,6 @@ export default function EventNotification({ events }: EventNotificationProps) {
       <div className="event-content">
         <div className="event-title">{event.title}</div>
         <div className="event-description">{event.description}</div>
-        {event.popularityDelta !== 0 && (
-          <div className={`event-delta ${event.popularityDelta > 0 ? 'positive' : 'negative'}`}>
-            人気: {event.popularityDelta > 0 ? '+' : ''}{event.popularityDelta}
-          </div>
-        )}
       </div>
     </div>
   );

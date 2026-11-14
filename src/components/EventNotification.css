@@ -70,19 +70,6 @@
   line-height: 1.4;
 }
 
-.event-delta {
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.event-delta.positive {
-  color: #28a745;
-}
-
-.event-delta.negative {
-  color: #dc3545;
-}
-
 @media (max-width: 600px) {
   .event-notification {
     top: 10px;

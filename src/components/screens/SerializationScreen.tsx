@@ -6,7 +6,7 @@ import { advanceWeek, simulateToEnd } from '@/game/simulation';
 import { cloneSerializationState } from '@/game/serialization';
 import EventNotification from '../EventNotification';
 import RankingTable from '../RankingTable';
-import PopularityGraph from '../PopularityGraph';
+import PlacementGraph from '../PlacementGraph';
 
 interface SerializationScreenProps {
   serializationState: SerializationState;
@@ -83,10 +83,6 @@ export default function SerializationScreen({
 
   const playerManga = state.playerManga;
   const allMangas = [playerManga, ...state.rivalMangas];
-  const avgPopularity =
-    playerManga.popularityHistory.length > 0
-      ? playerManga.popularityHistory.reduce((a, b) => a + b, 0) / playerManga.popularityHistory.length
-      : playerManga.currentPopularity;
 
   // リスク度を計算
   const riskPercentage = Math.round(state.playerManga.cancellationRisk * 100);
@@ -119,14 +115,6 @@ export default function SerializationScreen({
               <div className="info-section">
                 <h3>現在の状況</h3>
                 <div className="info-grid">
-                  <div className="info-row">
-                    <span className="info-label">現在の人気</span>
-                    <span className="info-value">{Math.round(playerManga.currentPopularity)}</span>
-                  </div>
-                  <div className="info-row">
-                    <span className="info-label">平均人気</span>
-                    <span className="info-value">{Math.round(avgPopularity)}</span>
-                  </div>
                   <div className="info-row">
                     <span className="info-label">アンケート順位</span>
                     <span className="info-value">{playerManga.currentRanking}</span>
@@ -219,7 +207,7 @@ export default function SerializationScreen({
               <EventNotification events={state.playerManga.eventHistory} />
             )}
 
-            <PopularityGraph manga={playerManga} />
+            <PlacementGraph manga={playerManga} totalSerializations={allMangas.length} />
 
             <RankingTable playerMangaId={playerManga.id} allMangas={allMangas} />
           </main>

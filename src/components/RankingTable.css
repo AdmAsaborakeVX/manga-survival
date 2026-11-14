@@ -86,27 +86,6 @@
   margin-left: 8px;
 }
 
-.col-popularity {
-  text-align: center;
-  font-weight: 600;
-  color: #333;
-  width: 70px;
-}
-
-.col-delta {
-  text-align: center;
-  font-weight: 600;
-  width: 70px;
-}
-
-.col-delta.positive {
-  color: #28a745;
-}
-
-.col-delta.negative {
-  color: #dc3545;
-}
-
 @media (max-width: 768px) {
   .ranking-table {
     font-size: 12px;
@@ -118,9 +97,7 @@
   }
 
   .col-rank-anim,
-  .col-rank-place,
-  .col-popularity,
-  .col-delta {
+  .col-rank-place {
     width: auto;
   }
 }

@@ -128,7 +128,7 @@ export const GAME_CONFIG: GameConfig = {
   // 最大連載週数、最低生存人気、ライバル作品の数などの設定
   maxSerializationWeeks: 500,
   minPopularityToSurvive: 10,
-  rivalCount: 20,
+  rivalCount: 19,
 };
 
 // ============================================
@@ -257,7 +257,7 @@ export const EVENT_CONFIG = {
 
 /** ライバル作品生成 */
 export const RIVAL_CONFIG = {
-  COUNT: 20,
+  COUNT: 19,
   ABILITY_CENTER: 130,
   ABILITY_VARIANCE: 25,
   INITIAL_POPULARITY_VARIANCE: 10,

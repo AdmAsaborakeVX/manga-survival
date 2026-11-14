@@ -9,9 +9,9 @@ export const EVENT_DEFINITIONS: EventDefinition[] = [
   // ========== ポジティブイベント ==========
   {
     id: 'protagonist_popular',
-    name: '主人公が読者に大人気',
+    name: '主人公に注目が集まる',
     type: 'positive',
-    description: '主人公キャラクターがTwitterで話題になり、ファンアート投稿が急増',
+    description: '主人公キャラクターがSNSで話題になり、ファンアート投稿が急増',
     baseOccurrenceProbability: 0.08,
     effects: {
       popularity: 12,
@@ -32,7 +32,7 @@ export const EVENT_DEFINITIONS: EventDefinition[] = [
   },
   {
     id: 'character_debut',
-    name: '人気キャラクターが登場',
+    name: '期待のキャラクターが登場',
     type: 'positive',
     description: 'ファンの期待度が高いキャラクターが初登場',
     baseOccurrenceProbability: 0.09,
@@ -102,7 +102,7 @@ export const EVENT_DEFINITIONS: EventDefinition[] = [
   },
   {
     id: 'protagonist_unpopular',
-    name: '主人公が不人気になる',
+    name: '主人公の言動が批判される',
     type: 'negative',
     description: 'キャラクターの言動がうざいと批判され、嫌いなキャラ投票で低位置',
     baseOccurrenceProbability: 0.08,
@@ -170,7 +170,7 @@ export const EVENT_DEFINITIONS: EventDefinition[] = [
   // ========== 特殊イベント ==========
   {
     id: 'sudden_drama',
-    name: '急展開による人気爆発',
+    name: '急展開で読者の期待が急上昇',
     type: 'neutral',
     description: '予想外の急展開が起きて、読者の期待が爆発的に上昇',
     baseOccurrenceProbability: 0.04,
@@ -181,9 +181,9 @@ export const EVENT_DEFINITIONS: EventDefinition[] = [
   },
   {
     id: 'unexpected_character_popularity',
-    name: '予想外のキャラクター人気',
+    name: '脇役キャラクターに注目が集まる',
     type: 'neutral',
-    description: '脇役キャラが予想外に人気を獲得し、新たなファン層を開拓',
+    description: '脇役キャラが予想外に注目を集め、新たな読者層を開拓',
     baseOccurrenceProbability: 0.05,
     effects: {
       popularity: 16,

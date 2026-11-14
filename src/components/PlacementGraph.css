@@ -1,0 +1,83 @@
+.placement-graph-container {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.placement-graph-container h3 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.graph-empty {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 14px;
+  background: #f9f9f9;
+  border-radius: 6px;
+}
+
+.graph-wrapper {
+  overflow-x: auto;
+  margin-bottom: 8px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.placement-graph {
+  width: 100%;
+  height: auto;
+}
+
+.grid-line {
+  stroke: #e0e0e0;
+  stroke-width: 1;
+  stroke-dasharray: 2, 2;
+}
+
+.grid-label,
+.x-label {
+  font-size: 12px;
+  fill: #999;
+}
+
+.grid-label {
+  text-anchor: end;
+}
+
+.graph-line {
+  stroke: #667eea;
+  stroke-width: 3;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.data-point {
+  fill: #667eea;
+  stroke: white;
+  stroke-width: 2;
+}
+
+.placement-graph-axis-labels {
+  display: flex;
+  justify-content: space-between;
+  color: #666;
+  font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .graph-wrapper {
+    margin: 0 -20px 8px -20px;
+    border-radius: 0;
+    padding: 10px 20px;
+  }
+}
