@@ -1,3 +1,6 @@
+# 概要
+配分演出を最初の1回に修正
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
