@@ -132,6 +132,26 @@ function ConfirmationStep({
   onConfirm: () => void;
   onBack?: () => void;
 }) {
+  // ジャンルのラベルを取得
+  const genreLabel = MANGA_CONFIG_OPTIONS.genres.find(
+    (g) => g.id === manga.configuration.genre
+  )?.label || manga.configuration.genre;
+
+  // 世界観のラベルを取得
+  const worldviewLabel = MANGA_CONFIG_OPTIONS.worldviews.find(
+    (w) => w.id === manga.configuration.worldview
+  )?.label || manga.configuration.worldview;
+
+  // 主人公のラベルを取得
+  const protagonistLabel = MANGA_CONFIG_OPTIONS.protagonists.find(
+    (p) => p.id === manga.configuration.protagonist
+  )?.label || manga.configuration.protagonist;
+
+  // 作風のラベルを取得
+  const styleLabel = MANGA_CONFIG_OPTIONS.styles.find(
+    (s) => s.id === manga.configuration.style
+  )?.label || manga.configuration.style;
+
   return (
     <div className="confirmation-step">
       <div className="manga-summary">
@@ -141,19 +161,19 @@ function ConfirmationStep({
         <div className="summary-grid">
           <div className="summary-item">
             <span className="label">ジャンル</span>
-            <span className="value">{manga.configuration.genre}</span>
+            <span className="value">{genreLabel}</span>
           </div>
           <div className="summary-item">
             <span className="label">世界観</span>
-            <span className="value">{manga.configuration.worldview}</span>
+            <span className="value">{worldviewLabel}</span>
           </div>
           <div className="summary-item">
             <span className="label">主人公</span>
-            <span className="value">{manga.configuration.protagonist}</span>
+            <span className="value">{protagonistLabel}</span>
           </div>
           <div className="summary-item">
             <span className="label">作風</span>
-            <span className="value">{manga.configuration.style}</span>
+            <span className="value">{styleLabel}</span>
           </div>
         </div>
 
