@@ -1,3 +1,6 @@
+# 概要
+確率に基づき能力値決定されるように変更
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
