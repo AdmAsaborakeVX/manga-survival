@@ -17,19 +17,7 @@ export function calculateRankings(allMangas: SerializingManga[]): Map<string, nu
   return rankings;
 }
 
-function getSmoothedSurveyRanking(manga: SerializingManga): number {
-  const recentRankings = manga.rankingHistory.slice(-PLACEMENT_CONFIG.SURVEY_HISTORY_WEEKS);
-  if (recentRankings.length === 0) return manga.currentRanking;
-
-  return recentRankings.reduce((total, rank) => total + rank, 0) / recentRankings.length;
-}
-
-function getPlacementScore(manga: SerializingManga): number {
-  const smoothedSurveyRanking = getSmoothedSurveyRanking(manga);
-  const adjustedRanking =
-    smoothedSurveyRanking * PLACEMENT_CONFIG.SURVEY_SCORE_WEIGHT +
-    manga.currentPlacementRanking * PLACEMENT_CONFIG.PREVIOUS_PLACEMENT_WEIGHT;
-
+function getTargetScoreForRanking(manga: SerializingManga, surveyRanking: number): number {
   const editorExpectationBonus =
     (manga.editorExpectation - 0.5) * PLACEMENT_CONFIG.EDITOR_EXPECTATION_FACTOR;
   const weeksSerialized = manga.popularityHistory.length;
@@ -45,13 +33,41 @@ function getPlacementScore(manga: SerializingManga): number {
         ? PLACEMENT_CONFIG.MEDIUM_SALES_BONUS
         : 0;
 
-  return adjustedRanking - editorExpectationBonus - newSerialBonus - salesBonus + longSerialPenalty;
+  return -surveyRanking + editorExpectationBonus + newSerialBonus + salesBonus - longSerialPenalty;
 }
 
-function getPlacementOrder(allMangas: SerializingManga[], seed?: number): SerializingManga[] {
+export function calculatePlacementTargetScore(manga: SerializingManga): number {
+  return getTargetScoreForRanking(manga, manga.currentRanking);
+}
+
+function getLegacyEmaFallback(manga: SerializingManga): number {
+  const previousSurveyRanking = manga.rankingHistory.length > 1
+    ? manga.rankingHistory[manga.rankingHistory.length - 2]
+    : manga.currentPlacementRanking || manga.currentRanking;
+  return getTargetScoreForRanking(manga, previousSurveyRanking);
+}
+
+function getNextEmaScore(manga: SerializingManga): number {
+  const targetScore = calculatePlacementTargetScore(manga);
+  const previousEmaScore =
+    typeof manga.placementEmaScore === 'number' && Number.isFinite(manga.placementEmaScore)
+      ? manga.placementEmaScore
+      : getLegacyEmaFallback(manga);
+
+  return (
+    PLACEMENT_CONFIG.EMA_ALPHA * targetScore +
+    (1 - PLACEMENT_CONFIG.EMA_ALPHA) * previousEmaScore
+  );
+}
+
+function getPlacementOrder(
+  allMangas: SerializingManga[],
+  emaScores: Map<string, number>,
+  seed?: number
+): SerializingManga[] {
   const scoredMangas = allMangas.map((manga, index) => {
-    let score = getPlacementScore(manga);
-    if (seed !== undefined && score <= PLACEMENT_CONFIG.TOP_RANK_NOISE_THRESHOLD) {
+    let score = emaScores.get(manga.id) ?? getNextEmaScore(manga);
+    if (seed !== undefined && score >= -PLACEMENT_CONFIG.TOP_RANK_NOISE_THRESHOLD) {
       const mangaSeed = seed ^ Math.imul(index + 1, 0x9e3779b9);
       const rng = new SeededRandom(mangaSeed);
       score += rng.nextFloat(
@@ -63,7 +79,7 @@ function getPlacementOrder(allMangas: SerializingManga[], seed?: number): Serial
   });
 
   return scoredMangas.sort((a, b) => {
-    const scoreDifference = a.score - b.score;
+    const scoreDifference = b.score - a.score;
     if (scoreDifference !== 0) return scoreDifference;
     const previousRankDifference =
       a.manga.currentPlacementRanking - b.manga.currentPlacementRanking;
@@ -72,14 +88,17 @@ function getPlacementOrder(allMangas: SerializingManga[], seed?: number): Serial
 }
 
 /**
- * 平滑化したアンケート順位を全作品で比較して掲載順位を算出
+ * 今週のアンケート評価をEMAで平滑化し、掲載順位を算出
  */
 export function calculatePlacementRanking(
   manga: SerializingManga,
   allMangas: SerializingManga[],
   seed?: number
 ): number {
-  const order = getPlacementOrder(allMangas, seed);
+  const scores = new Map(
+    allMangas.map((entry) => [entry.id, getNextEmaScore(entry)])
+  );
+  const order = getPlacementOrder(allMangas, scores, seed);
   const index = order.findIndex((entry) => entry.id === manga.id);
   return index < 0 ? Math.max(1, Math.min(allMangas.length, manga.currentRanking)) : index + 1;
 }
@@ -88,7 +107,14 @@ export function calculatePlacementRanking(
  * 複数の作品の掲載順位を一括計算
  */
 export function updatePlacementRankings(allMangas: SerializingManga[], seed?: number): void {
-  const order = getPlacementOrder(allMangas, seed);
+  const emaScores = new Map<string, number>();
+  for (const manga of allMangas) {
+    const emaScore = getNextEmaScore(manga);
+    manga.placementEmaScore = emaScore;
+    emaScores.set(manga.id, emaScore);
+  }
+
+  const order = getPlacementOrder(allMangas, emaScores, seed);
   order.forEach((manga, index) => {
     manga.currentPlacementRanking = index + 1;
   });

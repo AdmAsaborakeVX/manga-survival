@@ -38,6 +38,8 @@ describe('Serialization Simulation Engine', () => {
       expect(state.isActive).toBe(true);
       expect(state.endReason).toBeNull();
       expect(state.seed).toBe(12345);
+      expect(Number.isFinite(state.playerManga.placementEmaScore)).toBe(true);
+      expect(state.rivalMangas.every((manga) => Number.isFinite(manga.placementEmaScore))).toBe(true);
     });
 
     it('should generate player and rival mangas', () => {
@@ -122,13 +124,41 @@ describe('Serialization Simulation Engine', () => {
       ]);
     });
 
+    it('preserves placement EMA scores when serialization state is cloned or JSON-saved', () => {
+      const state = initializeSerializationState(mockMangaRecord, 12345);
+      const cloned = cloneSerializationState(state);
+      const restored = JSON.parse(JSON.stringify(state)) as typeof state;
+
+      expect(cloned.playerManga.placementEmaScore).toBe(state.playerManga.placementEmaScore);
+      expect(restored.playerManga.placementEmaScore).toBe(state.playerManga.placementEmaScore);
+      expect(restored.rivalMangas.map((manga) => manga.placementEmaScore)).toEqual(
+        state.rivalMangas.map((manga) => manga.placementEmaScore)
+      );
+    });
+
+    it('does not update placement EMA scores after serialization has ended', () => {
+      const state = initializeSerializationState(mockMangaRecord, 12345);
+      state.isActive = false;
+      state.playerManga.currentRanking = 12;
+      const scoreBeforeEnd = state.playerManga.placementEmaScore;
+
+      advanceWeek(state);
+
+      expect(state.currentWeek).toBe(0);
+      expect(state.playerManga.placementEmaScore).toBe(scoreBeforeEnd);
+    });
+
     it('keeps legacy saves without placement history playable without inventing past data', () => {
       const state = initializeSerializationState(mockMangaRecord, 12345);
       delete state.playerManga.placementHistory;
+      delete state.playerManga.placementEmaScore;
+      state.rivalMangas.forEach((manga) => delete manga.placementEmaScore);
 
       const resumed = advanceWeek(cloneSerializationState(state));
 
       expect(resumed.playerManga.placementHistory).toBeUndefined();
+      expect(Number.isFinite(resumed.playerManga.placementEmaScore)).toBe(true);
+      expect(resumed.rivalMangas.every((manga) => Number.isFinite(manga.placementEmaScore))).toBe(true);
     });
 
     it('should keep popularity in valid range', () => {

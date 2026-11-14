@@ -135,6 +135,8 @@ export interface SerializingManga {
   currentRanking: number;
   currentPlacementRanking: number;
   rankingHistory: number[];
+  /** Exponential moving average of the placement evaluation score; absent in legacy saves */
+  placementEmaScore?: number;
   /** 週次掲載順位。旧セーブでは未記録の場合がある */
   placementHistory?: number[];
   

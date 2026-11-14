@@ -43,6 +43,7 @@ export interface SimulationTrial {
   finalPlacement: number;
   totalSales: number;
   popularity: number[];
+  surveyRankings: number[];
   placements: number[];
   cancellationRisks: number[];
 }
@@ -89,6 +90,7 @@ export interface SimulationSummary {
   maxPeakPopularity: number;
   averageFinalPopularity: number;
   medianFinalPopularity: number;
+  surveyPlacementCorrelation: number;
   averagePopularityPlacementCorrelation: number;
   abilityPlacementCorrelation: number;
   averageRanking: number;
@@ -105,6 +107,12 @@ export interface SimulationSummary {
   firstPlaceRate: number;
   maxConsecutiveFirstPlaceWeeks: number;
   averagePlacementGap: number;
+  averageTenWeekPlacementChange: number;
+  tenWeekPlacementChangesFivePlusCount: number;
+  tenWeekPlacementChangesFivePlusRate: number;
+  tenWeekPlacementChangesEightPlusCount: number;
+  tenWeekPlacementChangesEightPlusRate: number;
+  maximumTenWeekPlacementChange: number;
   placementPeriods: PlacementPeriodAggregate[];
   averageSales: number;
   medianSales: number;
@@ -362,6 +370,7 @@ export function runSimulationTrial(
     finalPlacement: player.currentPlacementRanking,
     totalSales: player.totalSales,
     popularity,
+    surveyRankings: [...player.rankingHistory],
     placements,
     cancellationRisks,
   };
@@ -456,6 +465,23 @@ export function summarizeSimulationTrials(trials: SimulationTrial[]): Simulation
     }
   }
   const placementPeriods: PlacementPeriodAggregate[] = [];
+  const tenWeekPlacementChanges = trials.flatMap((trial) => {
+    const periodAverages: number[] = [];
+    for (let startIndex = 0; startIndex < trial.placements.length; startIndex += 10) {
+      periodAverages.push(average(trial.placements.slice(startIndex, startIndex + 10)));
+    }
+    return periodAverages.slice(1).map((periodAverage, index) =>
+      Math.abs(periodAverage - periodAverages[index])
+    );
+  });
+  const tenWeekPlacementChangesFivePlusCount =
+    tenWeekPlacementChanges.filter((change) => change >= 5).length;
+  const tenWeekPlacementChangesEightPlusCount =
+    tenWeekPlacementChanges.filter((change) => change >= 8).length;
+  const maximumTenWeekPlacementChange = tenWeekPlacementChanges.reduce(
+    (maximum, change) => Math.max(maximum, change),
+    0
+  );
   for (let startIndex = 0; startIndex < maxWeek; startIndex += 10) {
     const periodAverages = trials
       .map((trial) => trial.placements.slice(startIndex, startIndex + 10))
@@ -491,6 +517,13 @@ export function summarizeSimulationTrials(trials: SimulationTrial[]): Simulation
   }
 
   const sales = trials.map((trial) => trial.totalSales);
+  const surveyPlacementPairs = trials.flatMap((trial) => {
+    const pairCount = Math.min(trial.surveyRankings.length, trial.placements.length);
+    return Array.from({ length: pairCount }, (_, index) => ({
+      surveyRanking: trial.surveyRankings[index],
+      placement: trial.placements[index],
+    })).filter((pair) => Number.isFinite(pair.surveyRanking) && Number.isFinite(pair.placement));
+  });
   const salesBucketSize = 500000;
   const salesBucketCount = Math.max(1, Math.ceil(Math.max(...sales) / salesBucketSize));
   const salesDistribution = Array.from({ length: salesBucketCount }, (_, index) => {
@@ -527,6 +560,10 @@ export function summarizeSimulationTrials(trials: SimulationTrial[]): Simulation
     maxPeakPopularity: Math.max(...trials.map((trial) => trial.peakPopularity)),
     averageFinalPopularity: average(trials.map((trial) => trial.finalPopularity)),
     medianFinalPopularity: median(trials.map((trial) => trial.finalPopularity)),
+    surveyPlacementCorrelation: correlation(
+      surveyPlacementPairs.map((pair) => pair.surveyRanking),
+      surveyPlacementPairs.map((pair) => pair.placement)
+    ),
     averagePopularityPlacementCorrelation: correlation(
       trials.map((trial) => trial.averagePopularity),
       trials.map((trial) => trial.averagePlacement)
@@ -550,6 +587,16 @@ export function summarizeSimulationTrials(trials: SimulationTrial[]): Simulation
     firstPlaceRate: totalPlacements === 0 ? 0 : (firstPlaceCount / totalPlacements) * 100,
     maxConsecutiveFirstPlaceWeeks,
     averagePlacementGap: average(trials.map((trial) => trial.averagePlacement - trial.averageRanking)),
+    averageTenWeekPlacementChange: average(tenWeekPlacementChanges),
+    tenWeekPlacementChangesFivePlusCount,
+    tenWeekPlacementChangesFivePlusRate: tenWeekPlacementChanges.length === 0
+      ? 0
+      : (tenWeekPlacementChangesFivePlusCount / tenWeekPlacementChanges.length) * 100,
+    tenWeekPlacementChangesEightPlusCount,
+    tenWeekPlacementChangesEightPlusRate: tenWeekPlacementChanges.length === 0
+      ? 0
+      : (tenWeekPlacementChangesEightPlusCount / tenWeekPlacementChanges.length) * 100,
+    maximumTenWeekPlacementChange,
     placementPeriods,
     averageSales: average(sales),
     medianSales: median(sales),

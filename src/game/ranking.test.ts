@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createManga } from '@/game/manga';
 import { initializeSerializationState } from '@/game/serialization';
-import { calculatePlacementRanking, updatePlacementRankings } from '@/game/ranking';
+import {
+  calculatePlacementRanking,
+  calculatePlacementTargetScore,
+  updatePlacementRankings,
+} from '@/game/ranking';
 import { SeededRandom } from '@/utils/seededRandom';
 
 function createMangas(count: number) {
@@ -22,42 +26,65 @@ function createMangas(count: number) {
 }
 
 describe('placement ranking', () => {
-  it('smooths a one-week survey spike using the available recent ranking history', () => {
-    const [steady, volatile] = createMangas(2);
-    steady.rankingHistory = Array(8).fill(5);
-    volatile.rankingHistory = [...Array(7).fill(10), 1];
-    steady.currentRanking = 5;
-    volatile.currentRanking = 1;
-    steady.currentPlacementRanking = 5;
-    volatile.currentPlacementRanking = 10;
+  it('applies EMA to the evaluation score instead of blending the previous placement', () => {
+    const [manga] = createMangas(1);
+    manga.currentRanking = 10;
+    manga.currentPlacementRanking = 10;
+    manga.editorExpectation = 0.5;
+    manga.popularityHistory = Array(20).fill(50);
+    manga.placementEmaScore = -4;
+    const targetScore = calculatePlacementTargetScore(manga);
 
-    expect(calculatePlacementRanking(volatile, [steady, volatile])).toBe(2);
+    updatePlacementRankings([manga]);
+
+    expect(targetScore).toBe(-10.2);
+    expect(manga.placementEmaScore).toBeCloseTo(-4 * 0.85 + targetScore * 0.15);
   });
 
-  it('ranks all series uniquely and falls back to the current survey rank without history', () => {
-    const mangas = createMangas(3);
-    mangas[0].rankingHistory = [];
-    mangas[0].currentRanking = 3;
-    mangas[1].rankingHistory = [1, 2, 1];
-    mangas[2].rankingHistory = [2, 2, 2];
+  it('keeps editorial, new-series, sales, and long-series adjustments in the target score', () => {
+    const [newSeries, establishedSeries] = createMangas(2);
+    for (const manga of [newSeries, establishedSeries]) {
+      manga.currentRanking = 5;
+      manga.editorExpectation = 0.8;
+      manga.totalSales = 250000;
+      manga.salesHistory = [250000];
+    }
+    newSeries.popularityHistory = [];
+    establishedSeries.popularityHistory = Array(20).fill(50);
+
+    expect(calculatePlacementTargetScore(newSeries)).toBeCloseTo(-4.27);
+    expect(calculatePlacementTargetScore(establishedSeries)).toBeCloseTo(-4.67);
+  });
+
+  it('ranks by higher EMA score even when another series has a better current survey rank', () => {
+    const mangas = createMangas(2);
+    mangas[0].currentRanking = 1;
+    mangas[0].placementEmaScore = -15;
+    mangas[1].currentRanking = 15;
+    mangas[1].placementEmaScore = -1;
     mangas.forEach((manga) => {
       manga.editorExpectation = 0.5;
-      manga.currentPlacementRanking = manga.currentRanking;
+      manga.popularityHistory = Array(10).fill(50);
     });
 
     updatePlacementRankings(mangas);
 
-    expect(mangas.map((manga) => manga.currentPlacementRanking).sort()).toEqual([1, 2, 3]);
     expect(mangas[1].currentPlacementRanking).toBe(1);
+    expect(mangas[0].currentPlacementRanking).toBe(2);
   });
 
-  it('uses the existing current survey rank for legacy state without ranking history', () => {
+  it('initializes EMA from legacy ranking data when the saved score is missing', () => {
     const [manga] = createMangas(1);
-    manga.rankingHistory = [];
+    manga.rankingHistory = [5, 4];
     manga.currentRanking = 4;
     manga.currentPlacementRanking = 4;
     manga.editorExpectation = 0.5;
+    manga.popularityHistory = Array(10).fill(50);
+    delete manga.placementEmaScore;
 
+    updatePlacementRankings([manga]);
+
+    expect(manga.placementEmaScore).toBeCloseTo(-4.85);
     expect(calculatePlacementRanking(manga, [manga])).toBe(1);
   });
 

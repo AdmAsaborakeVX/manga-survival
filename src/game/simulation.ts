@@ -198,6 +198,12 @@ export function validateSerializationState(state: SerializationState): { valid: 
   if (state.playerManga.currentPopularity < POPULARITY_CONFIG.MIN || state.playerManga.currentPopularity > POPULARITY_CONFIG.MAX) {
     errors.push(`Player manga popularity out of range: ${state.playerManga.currentPopularity}`);
   }
+  if (
+    state.playerManga.placementEmaScore !== undefined &&
+    !Number.isFinite(state.playerManga.placementEmaScore)
+  ) {
+    errors.push('Player manga placement EMA score is not finite');
+  }
 
   // 履歴の長さが一貫しているか
   const expectedHistoryLength = state.currentWeek;
@@ -228,6 +234,9 @@ export function validateSerializationState(state: SerializationState): { valid: 
       errors.push(
         `Rival ${i} popularity history length mismatch: expected ${expectedHistoryLength}, got ${rival.popularityHistory.length}`
       );
+    }
+    if (rival.placementEmaScore !== undefined && !Number.isFinite(rival.placementEmaScore)) {
+      errors.push(`Rival ${i} placement EMA score is not finite`);
     }
     if (rival.placementHistory && rival.placementHistory.length !== expectedHistoryLength) {
       errors.push(

@@ -304,9 +304,14 @@ function SummaryResults({ summary }: { summary: SimulationSummary }) {
           <Stat label="最終掲載順位" value={`${formatNumber(summary.finalPlacement)}位`} />
           <Stat label="アンケート平均との掲載順位差" value={`${formatNumber(summary.averagePlacementGap)}位`} />
           <Stat label="週次の平均変動幅" value={`${formatNumber(summary.averageWeeklyPlacementChange)}位`} />
+          <Stat label="10週平均の前期間差 (平均)" value={`${formatNumber(summary.averageTenWeekPlacementChange)}位`} />
+          <Stat label="10週平均が5位以上変動" value={`${summary.tenWeekPlacementChangesFivePlusCount.toLocaleString()}回 (${formatNumber(summary.tenWeekPlacementChangesFivePlusRate)}%)`} />
+          <Stat label="10週平均が8位以上変動" value={`${summary.tenWeekPlacementChangesEightPlusCount.toLocaleString()}回 (${formatNumber(summary.tenWeekPlacementChangesEightPlusRate)}%)`} />
+          <Stat label="10週平均の最大変動幅" value={`${formatNumber(summary.maximumTenWeekPlacementChange)}位`} />
           <Stat label="10位以上の急変" value={`${summary.tenPlusPlacementChanges.toLocaleString()}回 (${formatNumber(extremeChangeRate)}%)`} />
           <Stat label="1位掲載回数 / 率" value={`${summary.firstPlaceCount.toLocaleString()}回 / ${formatNumber(summary.firstPlaceRate)}%`} />
           <Stat label="連続1位の最大週数" value={`${summary.maxConsecutiveFirstPlaceWeeks}週`} />
+          <Stat label="アンケート順位-掲載順位 相関" value={formatNumber(summary.surveyPlacementCorrelation, 3)} />
           <Stat label="平均人気-平均掲載順位 相関" value={formatNumber(summary.averagePopularityPlacementCorrelation, 3)} />
           <Stat label="能力-平均掲載順位 相関" value={formatNumber(summary.abilityPlacementCorrelation, 3)} />
           <Stat label="累計売上 平均 / 中央値" value={`${formatNumber(summary.averageSales / 1000000, 2)} / ${formatNumber(summary.medianSales / 1000000, 2)}百万円`} />
@@ -760,8 +765,9 @@ function ComparisonResults({
           <thead>
             <tr>
               <th>能力</th><th>平均アンケート順位</th><th>平均掲載順位</th><th>最良 / 最悪掲載</th>
-              <th>平均変動幅</th><th>10位以上の急変</th><th>1位掲載率</th><th>最大連続1位</th>
-              <th>人気-掲載相関</th>
+              <th>平均週次変動</th><th>10週差平均</th><th>10週差5+率</th><th>10週差8+率</th>
+              <th>10週最大差</th><th>10位以上の急変</th><th>1位掲載率</th><th>最大連続1位</th>
+              <th>アンケート-掲載相関</th><th>人気-掲載相関</th>
             </tr>
           </thead>
           <tbody>
@@ -775,9 +781,14 @@ function ComparisonResults({
                   <td>{formatNumber(summary.averagePlacement)}位</td>
                   <td>{summary.bestPlacement} / {summary.worstPlacement}位</td>
                   <td>{formatNumber(summary.averageWeeklyPlacementChange)}位</td>
+                  <td>{formatNumber(summary.averageTenWeekPlacementChange)}位</td>
+                  <td>{formatNumber(summary.tenWeekPlacementChangesFivePlusRate)}%</td>
+                  <td>{formatNumber(summary.tenWeekPlacementChangesEightPlusRate)}%</td>
+                  <td>{formatNumber(summary.maximumTenWeekPlacementChange)}位</td>
                   <td>{summary.tenPlusPlacementChanges.toLocaleString()}回 ({formatNumber(extremeChangeRate)}%)</td>
                   <td>{formatNumber(summary.firstPlaceRate)}%</td>
                   <td>{summary.maxConsecutiveFirstPlaceWeeks}週</td>
+                  <td>{formatNumber(summary.surveyPlacementCorrelation, 3)}</td>
                   <td>{formatNumber(summary.averagePopularityPlacementCorrelation, 3)}</td>
                 </tr>
               );

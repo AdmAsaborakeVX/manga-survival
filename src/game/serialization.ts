@@ -1,6 +1,7 @@
 import type { SerializationState, SerializingManga, MangaRecord, MangaConfiguration, MangaAbilities } from '@/types';
 import { SeededRandom } from '@/utils/seededRandom';
 import { RIVAL_CONFIG } from '@/game/config';
+import { calculatePlacementTargetScore, calculateRankings } from '@/game/ranking';
 import {
   calculateBasePopularity,
   clampPopularity,
@@ -184,12 +185,22 @@ export function initializeSerializationState(
   rivalCount: number = RIVAL_CONFIG.COUNT
 ): SerializationState {
   const rng = new SeededRandom(seed);
+  const playerState = initializePlayerManga(playerManga, rng);
+  const rivalStates = generateRivalMangas(rng, rivalCount);
+  const allMangas = [playerState, ...rivalStates];
+  const initialRankings = calculateRankings(allMangas);
+
+  for (const manga of allMangas) {
+    manga.currentRanking = initialRankings.get(manga.id) ?? manga.currentRanking;
+    manga.currentPlacementRanking = manga.currentRanking;
+    manga.placementEmaScore = calculatePlacementTargetScore(manga);
+  }
 
   const state: SerializationState = {
     id: `serialization_${Date.now()}`,
     playerMangaId: playerManga.id,
-    playerManga: initializePlayerManga(playerManga, rng),
-    rivalMangas: generateRivalMangas(rng, rivalCount),
+    playerManga: playerState,
+    rivalMangas: rivalStates,
 
     currentWeek: 0,
     isActive: true,

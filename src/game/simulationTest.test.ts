@@ -139,6 +139,42 @@ describe('developer simulation test runner', () => {
     });
   });
 
+  it('calculates the correlation between weekly survey and placement rankings', () => {
+    const settings = createDefaultSimulationSettings(42);
+    settings.maxWeeks = 5;
+    const sample = runSimulationTrial(settings, 42);
+    const summary = summarizeSimulationTrials([
+      {
+        ...sample,
+        surveyRankings: [1, 2, 3, 4],
+        placements: [1, 2, 3, 4],
+      },
+    ]);
+
+    expect(summary.surveyPlacementCorrelation).toBeCloseTo(1);
+  });
+
+  it('measures large changes between consecutive ten-week average placements', () => {
+    const settings = createDefaultSimulationSettings(42);
+    settings.maxWeeks = 30;
+    const sample = runSimulationTrial(settings, 42);
+    const placements = [
+      ...Array(10).fill(5),
+      ...Array(10).fill(10),
+      ...Array(10).fill(19),
+    ];
+    const summary = summarizeSimulationTrials([
+      { ...sample, weeks: 30, placements },
+    ]);
+
+    expect(summary.averageTenWeekPlacementChange).toBe(7);
+    expect(summary.tenWeekPlacementChangesFivePlusCount).toBe(2);
+    expect(summary.tenWeekPlacementChangesFivePlusRate).toBe(100);
+    expect(summary.tenWeekPlacementChangesEightPlusCount).toBe(1);
+    expect(summary.tenWeekPlacementChangesEightPlusRate).toBe(50);
+    expect(summary.maximumTenWeekPlacementChange).toBe(9);
+  });
+
   it.each([100, 1000, 10000])('summarizes %i simulation trials', (count) => {
     const settings = createDefaultSimulationSettings(20261114);
     const trials = Array.from({ length: count }, (_, index) =>
